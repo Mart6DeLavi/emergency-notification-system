@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AmplicodeJpaDataSourceConfig">
+    <data-sources>
+      <data-source id="2a7f940f-c14c-40da-928e-22b1c1e42a75" name="Sensa_User_Management_Service" url="jdbc:postgresql://localhost/Sensa_User_Management_Service" driverClass="org.postgresql.Driver" />
+    </data-sources>
+  </component>
+</project>
