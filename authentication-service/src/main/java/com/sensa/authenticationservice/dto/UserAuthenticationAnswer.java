@@ -7,7 +7,7 @@ import lombok.Getter;
 @Getter
 public enum UserAuthenticationAnswer {
     FOUND("Found user in database"),
-    NOTEXIST("No such user id database");
+    NOTEXIST("No such user in database");
 
     private final String message;
 
@@ -23,7 +23,7 @@ public enum UserAuthenticationAnswer {
     @JsonCreator
     public static UserAuthenticationAnswer fromString(String value) {
         for (UserAuthenticationAnswer answer : UserAuthenticationAnswer.values()) {
-            if (answer.name().equalsIgnoreCase(value)) {
+            if (answer.name().equalsIgnoreCase(value) || answer.getMessage().equalsIgnoreCase(value)) {
                 return answer;
             }
         }

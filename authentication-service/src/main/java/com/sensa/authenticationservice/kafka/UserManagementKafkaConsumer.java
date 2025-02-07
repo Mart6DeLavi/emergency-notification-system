@@ -12,7 +12,10 @@ import org.springframework.stereotype.Component;
 public class UserManagementKafkaConsumer {
 
     @Async("kafkaTaskExecutor")
-    @KafkaListener(topics = "user-management-service-to-authentication-service", groupId = "authentication-group")
+    @KafkaListener(topics = "user-management-to-authentication-service",
+            groupId = "authentication-group",
+            containerFactory = "userAuthenticationKafkaListenerContainerFactory"
+    )
     public void consumeUserManagementService(UserAuthenticationAnswerDto dto) {
         Thread consumerThread = new Thread(() -> {
             String threadName = Thread.currentThread().getName();

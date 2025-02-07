@@ -39,7 +39,9 @@ public class UserManagementServiceKafkaConfiguration {
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, UserAuthenticationAnswerDtoDeserializer.class);
-        return new DefaultKafkaConsumerFactory<>(props);
+        return new DefaultKafkaConsumerFactory<>(props,
+                new StringDeserializer(),
+                new UserAuthenticationAnswerDtoDeserializer());
     }
 
     @Bean
