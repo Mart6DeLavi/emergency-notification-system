@@ -7,3 +7,9 @@ spring:
 
   liquibase:
     change-log: classpath:/db/changelog/db.changelog-master.yaml
+
+  kafka:
+    consumer:
+      group-id: user-management-service
+server:
+  port: 8000

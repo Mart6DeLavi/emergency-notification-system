@@ -22,7 +22,6 @@ configurations {
 repositories {
     mavenCentral()
 }
-//TODO: ADD LIQUIBASE DEPENDENCY
 
 //basic
 dependencies {
@@ -45,7 +44,6 @@ dependencies {
 dependencies {
     implementation 'org.hibernate.validator:hibernate-validator:6.2.5.Final'
     implementation 'jakarta.validation:jakarta.validation-api:3.0.2'
-
 }
 
 //Security
@@ -53,6 +51,11 @@ dependencies {
     implementation group: 'org.springframework.security', name: 'spring-security-core', version: '6.4.0'
     implementation group: 'org.springframework.security', name: 'spring-security-web', version: '6.4.0'
     implementation group: 'org.springframework.security', name: 'spring-security-config', version: '6.4.0'
+}
+
+//Kafka
+dependencies {
+    implementation 'org.springframework.kafka:spring-kafka'
 }
 
 tasks.named('test') {
