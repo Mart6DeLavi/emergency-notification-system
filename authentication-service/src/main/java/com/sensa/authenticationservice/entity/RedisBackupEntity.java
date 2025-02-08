@@ -1,7 +1,6 @@
 package com.sensa.authenticationservice.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -13,20 +12,18 @@ import java.util.Objects;
 @Getter
 @Setter
 @RequiredArgsConstructor
-@Table(name = "authentication_user")
-public class AuthEntity {
+@Table(name = "redis_backup")
+public class RedisBackupEntity {
     @Id
     @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "username", nullable = false)
-    @NotBlank(message = "Username can not be empty")
+    @Column(name = "username", unique = true, nullable = false)
     private String username;
 
-    @Column(name = "password", nullable = false)
-    @NotBlank(message = "Password can not be empty")
-    private String password;
+    @Column(name = "token", nullable = false)
+    private String token;
 
     @Override
     public final boolean equals(Object o) {
@@ -35,7 +32,7 @@ public class AuthEntity {
         Class<?> oEffectiveClass = o instanceof HibernateProxy proxy ? proxy.getHibernateLazyInitializer().getPersistentClass() : o.getClass();
         Class<?> thisEffectiveClass = this instanceof HibernateProxy proxy ? proxy.getHibernateLazyInitializer().getPersistentClass() : this.getClass();
         if (thisEffectiveClass != oEffectiveClass) return false;
-        AuthEntity that = (AuthEntity) o;
+        RedisBackupEntity that = (RedisBackupEntity) o;
         return getId() != null && Objects.equals(getId(), that.getId());
     }
 

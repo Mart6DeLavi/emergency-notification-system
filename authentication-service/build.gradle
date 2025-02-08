@@ -33,6 +33,13 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
+//Security
+dependencies {
+	implementation group: 'com.bucket4j', name: 'bucket4j_jdk8-core', version: '8.4.0'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	testImplementation 'org.springframework.security:spring-security-test'
+}
+
 //hibernate
 dependencies {
 	implementation 'org.hibernate.validator:hibernate-validator:6.2.5.Final'
@@ -49,6 +56,13 @@ dependencies {
 //Kafka
 dependencies {
 	implementation 'org.springframework.kafka:spring-kafka'
+}
+
+//JWT
+dependencies {
+	implementation group: 'io.jsonwebtoken', name: 'jjwt', version: '0.9.1'
+	implementation group: 'javax.xml.bind', name: 'jaxb-api', version: '2.3.1'
+	implementation group: 'org.glassfish.jaxb', name: 'jaxb-runtime', version: '3.0.1'
 }
 
 tasks.named('test') {

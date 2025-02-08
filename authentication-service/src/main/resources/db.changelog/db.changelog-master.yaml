@@ -1,3 +1,5 @@
 databaseChangeLog:
   - include:
       file: db.changelog/changeset/authentication_V001_initial.sql
+  - include:
+      file: db.changelog/changeset/redis_backup_table_creation_V002.sql

@@ -11,28 +11,28 @@ import org.springframework.stereotype.Component;
 @Component
 public class UserManagementKafkaConsumer {
 
-    @Async("kafkaTaskExecutor")
-    @KafkaListener(topics = "user-management-to-authentication-service",
-            groupId = "authentication-group",
-            containerFactory = "userAuthenticationKafkaListenerContainerFactory"
-    )
-    public void consumeUserManagementService(UserAuthenticationAnswerDto dto) {
-        Thread consumerThread = new Thread(() -> {
-            String threadName = Thread.currentThread().getName();
-            log.info("Consumed message: {}, {}", threadName, dto.getAnswer());
-
-            if (dto.getAnswer().equals(UserAuthenticationAnswer.FOUND)) {
-                log.info("[{}] User found. Generating token", threadName);
-                //TODO: Сделать генерацию токена если всё хорошо
-            } else {
-                log.error("[{}] User not found. Error...", threadName);
-                //TODO: Сделать что-то если пользователь не найден в базе данных
-            }
-
-
-            log.info("[{}] Work ended.", threadName);
-        });
-
-        consumerThread.start();
-    }
+//    @Async("kafkaTaskExecutor")
+//    @KafkaListener(topics = "user-management-to-authentication-service",
+//            groupId = "authentication-group",
+//            containerFactory = "userAuthenticationKafkaListenerContainerFactory"
+//    )
+//    public void consumeUserManagementService(UserAuthenticationAnswerDto dto) {
+//        Thread consumerThread = new Thread(() -> {
+//            String threadName = Thread.currentThread().getName();
+//            log.info("Consumed message: {}, {}", threadName, dto.getAnswer());
+//
+//            if (dto.getAnswer().equals(UserAuthenticationAnswer.FOUND)) {
+//                log.info("[{}] User found. Generating token", threadName);
+//                //TODO: Сделать генерацию токена если всё хорошо
+//            } else {
+//                log.error("[{}] User not found. Error...", threadName);
+//                //TODO: Сделать что-то если пользователь не найден в базе данных
+//            }
+//
+//
+//            log.info("[{}] Work ended.", threadName);
+//        });
+//
+//        consumerThread.start();
+//    }
 }

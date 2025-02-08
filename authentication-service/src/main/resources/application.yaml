@@ -10,7 +10,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
 
   kafka:
     bootstrap-servers: localhost:9092
@@ -22,3 +22,8 @@ spring:
 
 server:
   port: 8081
+
+
+jwt:
+  user_secret: ${JWT_USER_SECRET}
+  user_secret_lifetime: ${JWT_USER_SECRET_LIFETIME}
