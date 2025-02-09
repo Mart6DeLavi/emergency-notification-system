@@ -2,6 +2,23 @@ spring:
   application:
     name: authentication-service
 
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      username: ${REDIS_USERNAME}
+      password: ${REDIS_PASSWORD}
+      timeout: 60000
+      connect-timeout: 10s
+      ssl:
+        enabled: false
+      lettuce:
+        pool:
+          max-active: 10
+          max-idle: 10
+          min-idle: 2
+          max-wait: -1ms
+
   datasource:
     url: jdbc:postgresql://localhost:5432/Sensa_Authentication_Service
     username: ${POSTGRES_USERNAME}

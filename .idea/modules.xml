@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/SENSA.iml" filepath="$PROJECT_DIR$/SENSA.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/authentication-service.main.iml" filepath="$PROJECT_DIR$/.idea/modules/authentication-service.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/user-management-service.main.iml" filepath="$PROJECT_DIR$/.idea/modules/user-management-service.main.iml" />
     </modules>
   </component>

@@ -1,10 +1,7 @@
 package com.sensa.authenticationservice.service;
 
 import com.sensa.authenticationservice.config.security.BasicSecurityConfig;
-import com.sensa.authenticationservice.dto.RedisBackupDto;
-import com.sensa.authenticationservice.dto.UserAuthenticationAnswer;
-import com.sensa.authenticationservice.dto.UserAuthenticationAnswerDto;
-import com.sensa.authenticationservice.dto.UserAuthenticationDto;
+import com.sensa.authenticationservice.dto.*;
 import com.sensa.authenticationservice.entity.AuthEntity;
 import com.sensa.authenticationservice.kafka.UserManagementServiceKafkaProducer;
 import com.sensa.authenticationservice.mapper.RedisBackupEntityMapper;
@@ -14,10 +11,12 @@ import com.sensa.authenticationservice.repository.UserStorageRepository;
 import com.sensa.authenticationservice.util.JwtTokenUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.*;
@@ -31,6 +30,7 @@ public class AuthenticationService {
     private final JwtTokenUtils jwtTokenUtils;
     private final RedisBackupRepository redisBackupRepository;
     private final BasicSecurityConfig basicSecurityConfig;
+    private final RedisTemplate<String, RedisTokenDto> redisTemplate;
 
     private final Queue<CompletableFuture<UserAuthenticationAnswerDto>> pendingRequests = new ConcurrentLinkedDeque<>();
 
@@ -61,6 +61,14 @@ public class AuthenticationService {
                 redisBackupDto.setUsername(userAuthenticationDto.username());
                 redisBackupDto.setToken(token);
                 redisBackupRepository.save(RedisBackupEntityMapper.toEntity(redisBackupDto));
+
+                String redisKey = "user: " + userAuthenticationDto.username();
+                RedisTokenDto redisTokenDto = new RedisTokenDto();
+                redisTokenDto.setUsername(userAuthenticationDto.username());
+                redisTokenDto.setToken(token);
+                redisTemplate.opsForValue().set(redisKey, redisTokenDto, Duration.ofHours(2));
+                log.info("Token stored in Redis for user: {}", userAuthenticationDto.username());
+
                 return token;
             } else {
                 log.warn("❌ User not found in User Management Service.");

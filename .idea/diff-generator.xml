@@ -2,7 +2,7 @@
 <project version="4">
   <component name="DiffGenerationConfig">
     <option name="targetDbValue" value="ba2c93f9-5aa6-4702-8d1f-fbc4cd61d98b" />
-    <option name="updateChangeLogPath" value="user-management-service/src/main/resources/db/changelog/db.changelog-master.yaml" />
-    <option name="updateDbConnectionName" value="ba2c93f9-5aa6-4702-8d1f-fbc4cd61d98b" />
+    <option name="updateChangeLogPath" value="authentication-service/src/main/resources/db.changelog/db.changelog-master.yaml" />
+    <option name="updateDbConnectionName" value="04dd9eb5-7c04-41ef-999d-1e20a43ae015" />
   </component>
 </project>
