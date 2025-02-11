@@ -5,7 +5,9 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.hibernate.proxy.HibernateProxy;
+import org.springframework.data.annotation.CreatedDate;
 
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
@@ -24,6 +26,11 @@ public class RedisBackupEntity {
 
     @Column(name = "token", nullable = false)
     private String token;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    @Temporal(TemporalType.TIMESTAMP)
+    @CreatedDate
+    private LocalDateTime createdAt;
 
     @Override
     public final boolean equals(Object o) {

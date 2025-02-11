@@ -28,9 +28,8 @@ public class AuthenticationService {
     private final UserManagementServiceKafkaProducer userManagementServiceKafkaProducer;
     private final UserStorageRepository userStorageRepository;
     private final JwtTokenUtils jwtTokenUtils;
-    private final RedisBackupRepository redisBackupRepository;
     private final BasicSecurityConfig basicSecurityConfig;
-    private final RedisTemplate<String, RedisTokenDto> redisTemplate;
+    private final RedisRecoveryService redisRecoveryService;
 
     private final Queue<CompletableFuture<UserAuthenticationAnswerDto>> pendingRequests = new ConcurrentLinkedDeque<>();
 
@@ -56,19 +55,7 @@ public class AuthenticationService {
             if (response.getAnswer().equals(UserAuthenticationAnswer.FOUND)) {
                 String token = jwtTokenUtils.generateToken(userAuthenticationDto);
                 log.info("✅ Generated token for user: {}", userAuthenticationDto.username());
-
-                RedisBackupDto redisBackupDto = new RedisBackupDto();
-                redisBackupDto.setUsername(userAuthenticationDto.username());
-                redisBackupDto.setToken(token);
-                redisBackupRepository.save(RedisBackupEntityMapper.toEntity(redisBackupDto));
-
-                String redisKey = "user: " + userAuthenticationDto.username();
-                RedisTokenDto redisTokenDto = new RedisTokenDto();
-                redisTokenDto.setUsername(userAuthenticationDto.username());
-                redisTokenDto.setToken(token);
-                redisTemplate.opsForValue().set(redisKey, redisTokenDto, Duration.ofHours(2));
-                log.info("Token stored in Redis for user: {}", userAuthenticationDto.username());
-
+                redisRecoveryService.saveToken(userAuthenticationDto.username(), token);
                 return token;
             } else {
                 log.warn("❌ User not found in User Management Service.");

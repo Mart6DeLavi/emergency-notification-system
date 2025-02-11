@@ -3,7 +3,6 @@ package com.sensa.authenticationservice.config.redis;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sensa.authenticationservice.dto.RedisTokenDto;
 import lombok.Getter;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
