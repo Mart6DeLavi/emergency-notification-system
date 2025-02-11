@@ -1,18 +1,15 @@
 package com.sensa.authenticationservice.service;
 
 import com.sensa.authenticationservice.dto.RedisBackupDto;
-import com.sensa.authenticationservice.dto.RedisTokenDto;
 import com.sensa.authenticationservice.entity.RedisBackupEntity;
 import com.sensa.authenticationservice.mapper.RedisBackupEntityMapper;
 import com.sensa.authenticationservice.repository.RedisBackupRepository;
+import com.sensa.authenticationservice.util.RedisUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataAccessException;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -22,23 +19,17 @@ import java.util.List;
 public class RedisRecoveryService {
 
     private final RedisBackupRepository redisBackupRepository;
-    private final RedisTemplate<String, RedisTokenDto> redisTemplate;
+    private final RedisUtils redisUtils;
 
     private volatile boolean redisAvailable = true;
 
     public void saveToken(String username, String token) {
-        String redisKey = "user: " + username;
-        RedisTokenDto redisTokenDto = new RedisTokenDto();
-        redisTokenDto.setUsername(username);
-        redisTokenDto.setToken(token);
-
-        try {
-            redisTemplate.opsForValue().set(redisKey, redisTokenDto, Duration.ofHours(2));
-            log.info("✅ Token stored in Redis for user: {}", username);
+        if (redisUtils.isRedisAvailable()) {
+            redisUtils.saveTokenToRedis(username, token);
             redisAvailable = true;
-        } catch (DataAccessException e) {
+        } else {
             redisAvailable = false;
-            log.error("❌ Unable to store token in Redis. Falling back to PostgreSQL");
+            log.error("❌ Redis unavailable, storing token in PostgreSQL");
             RedisBackupDto redisBackupDto = new RedisBackupDto();
             redisBackupDto.setUsername(username);
             redisBackupDto.setToken(token);
@@ -52,8 +43,7 @@ public class RedisRecoveryService {
             return;
         }
 
-        try {
-            redisTemplate.getConnectionFactory().getConnection().ping();
+        if (redisUtils.isRedisAvailable()) {
             redisAvailable = true;
             log.info("✅ Redis connection restored. Restoring tokens...");
 
@@ -65,9 +55,8 @@ public class RedisRecoveryService {
             }
 
             log.info("✅ Successfully restored {} tokens to Redis.", backupTokens.size());
-        } catch (DataAccessException ex) {
-            redisAvailable = false;
-            log.warn("⚠️❌ Redis is still unavailable.");
+        } else {
+            log.warn("⚠️ Redis is still unavailable.");
         }
     }
 }
