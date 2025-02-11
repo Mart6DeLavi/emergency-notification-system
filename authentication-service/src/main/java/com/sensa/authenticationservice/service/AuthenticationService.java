@@ -1,25 +1,25 @@
 package com.sensa.authenticationservice.service;
 
 import com.sensa.authenticationservice.config.security.BasicSecurityConfig;
-import com.sensa.authenticationservice.dto.*;
+import com.sensa.authenticationservice.dto.UserAuthenticationAnswer;
+import com.sensa.authenticationservice.dto.UserAuthenticationAnswerDto;
+import com.sensa.authenticationservice.dto.UserAuthenticationDto;
 import com.sensa.authenticationservice.entity.AuthEntity;
 import com.sensa.authenticationservice.kafka.UserManagementServiceKafkaProducer;
-import com.sensa.authenticationservice.mapper.RedisBackupEntityMapper;
 import com.sensa.authenticationservice.mapper.UserAuthenticationDtoMapper;
-import com.sensa.authenticationservice.repository.RedisBackupRepository;
 import com.sensa.authenticationservice.repository.UserStorageRepository;
 import com.sensa.authenticationservice.util.JwtTokenUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
 import java.util.Queue;
 import java.util.UUID;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @Slf4j
 @Service
@@ -68,7 +68,7 @@ public class AuthenticationService {
             log.error("❌ Unexpected error while waiting for response", ex);
             return null;
         } finally {
-            pendingRequests.remove(requestId);
+            pendingRequests.remove(future);
         }
     }
 
@@ -77,12 +77,12 @@ public class AuthenticationService {
             containerFactory = "userAuthenticationKafkaListenerContainerFactory"
     )
     public void processKafkaResponse(UserAuthenticationAnswerDto response) {
-        log.info("Received kafka response: {}", response);
+        log.info("✅ Received kafka response: {}", response);
         CompletableFuture<UserAuthenticationAnswerDto> future = pendingRequests.poll();
         if (future != null) {
             future.complete(response);
         } else {
-            log.warn("⚠️ Received response from unknown request: {}", response);
+            log.warn("⚠️ Received response from unknown request: {}", response.getAnswer());
         }
     }
 }
