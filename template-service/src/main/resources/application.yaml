@@ -1,0 +1,17 @@
+server:
+  port: 8003
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/Sensa_Template_Service
+    username: ${POSTGRES_USERNAME}
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+
+services:
+  user-management: user-management-service

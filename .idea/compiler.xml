@@ -10,5 +10,10 @@
         <module name="authentication-service.main" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="notification-service" target="21" />
+      <module name="notification-service.main" target="21" />
+      <module name="notification-service.test" target="21" />
+    </bytecodeTargetLevel>
   </component>
 </project>
