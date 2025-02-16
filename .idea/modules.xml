@@ -3,8 +3,15 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/SENSA.iml" filepath="$PROJECT_DIR$/SENSA.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/authentication-service.iml" filepath="$PROJECT_DIR$/.idea/modules/authentication-service.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/authentication-service.main.iml" filepath="$PROJECT_DIR$/.idea/modules/authentication-service.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/authentication-service.test.iml" filepath="$PROJECT_DIR$/.idea/modules/authentication-service.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/template-service/template-service.iml" filepath="$PROJECT_DIR$/template-service/template-service.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/template-service.main.iml" filepath="$PROJECT_DIR$/.idea/modules/template-service.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/template-service.test.iml" filepath="$PROJECT_DIR$/.idea/modules/template-service.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/user-management-service.iml" filepath="$PROJECT_DIR$/.idea/modules/user-management-service.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/user-management-service.main.iml" filepath="$PROJECT_DIR$/.idea/modules/user-management-service.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/user-management-service.test.iml" filepath="$PROJECT_DIR$/.idea/modules/user-management-service.test.iml" />
     </modules>
   </component>
 </project>

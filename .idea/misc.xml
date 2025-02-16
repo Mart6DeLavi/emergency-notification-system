@@ -3,8 +3,11 @@
   <component name="ExternalStorageConfigurationManager" enabled="true" />
   <component name="FrameworkDetectionExcludesConfiguration">
     <file type="web" url="file://$PROJECT_DIR$/authentication-service" />
+<<<<<<< HEAD
     <file type="web" url="file://$PROJECT_DIR$/template-service" />
     <file type="web" url="file://$PROJECT_DIR$/user-management-service" />
+=======
+>>>>>>> user-management-service/master
   </component>
   <component name="ProjectRootManager" version="2" project-jdk-name="graalvm-ce-21" project-jdk-type="JavaSDK">
     <output url="file://$PROJECT_DIR$/out" />
