@@ -2,6 +2,8 @@ server:
   port: 8003
 
 spring:
+  application:
+    name: template-service
   datasource:
     url: jdbc:postgresql://localhost:5432/Sensa_Template_Service
     username: ${POSTGRES_USERNAME}
