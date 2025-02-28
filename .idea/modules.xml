@@ -6,7 +6,10 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/authentication-service.iml" filepath="$PROJECT_DIR$/.idea/modules/authentication-service.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/authentication-service.main.iml" filepath="$PROJECT_DIR$/.idea/modules/authentication-service.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/authentication-service.test.iml" filepath="$PROJECT_DIR$/.idea/modules/authentication-service.test.iml" />
-      <module fileurl="file://$PROJECT_DIR$/template-service/template-service.iml" filepath="$PROJECT_DIR$/template-service/template-service.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/notification-service.iml" filepath="$PROJECT_DIR$/.idea/modules/notification-service.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/notification-service.main.iml" filepath="$PROJECT_DIR$/.idea/modules/notification-service.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/notification-service.test.iml" filepath="$PROJECT_DIR$/.idea/modules/notification-service.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/template-service.iml" filepath="$PROJECT_DIR$/.idea/modules/template-service.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/template-service.main.iml" filepath="$PROJECT_DIR$/.idea/modules/template-service.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/template-service.test.iml" filepath="$PROJECT_DIR$/.idea/modules/template-service.test.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/user-management-service.iml" filepath="$PROJECT_DIR$/.idea/modules/user-management-service.iml" />

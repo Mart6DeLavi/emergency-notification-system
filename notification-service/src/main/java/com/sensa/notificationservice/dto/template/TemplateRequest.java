@@ -1,0 +1,12 @@
+package com.sensa.notificationservice.dto.template;
+
+import lombok.Builder;
+
+@Builder
+public record TemplateRequest(
+        String clientUsername,
+        String title,
+        String content
+) {
+}
+

@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="Gradle: com.bucket4j:bucket4j_jdk8-core:8.4.0" type="java-imported" external-system-id="GRADLE">
+    <properties groupId="com.bucket4j" artifactId="bucket4j_jdk8-core" version="8.4.0" baseVersion="8.4.0" />
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.bucket4j/bucket4j_jdk8-core/8.4.0/ba41c3a8e14c6ec33e40fa91a50f845839b9aba1/bucket4j_jdk8-core-8.4.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
