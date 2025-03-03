@@ -4,7 +4,6 @@ import com.sensa.notificationservice.client.TemplateClient;
 import com.sensa.notificationservice.dto.NotificationRequest;
 import com.sensa.notificationservice.dto.NotificationResponse;
 import com.sensa.notificationservice.dto.kafka.NotificationKafkaDelivery;
-import com.sensa.notificationservice.dto.template.TemplateRequest;
 import com.sensa.notificationservice.entity.Notification;
 import com.sensa.notificationservice.exception.InvalidNotificationStatusTransitionException;
 import com.sensa.notificationservice.exception.NotificationNotFoundException;
@@ -17,8 +16,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
-
 @Service
 @RequiredArgsConstructor
 public class NotificationService {
@@ -27,13 +24,10 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final TemplateClient templateClient;
     private final NotificationMapper mapper;
-
-    @Value("${spring.kafka.topics.producer.delivery}")
-    private String deliveryTopic;
+    private final KafkaProducerService kafkaProducerService;
 
     public NotificationResponse createNotification(NotificationRequest request) {
         try {
-            // Проверяем наличие шаблона в TemplateService
             boolean templateExists = templateClient.findTemplate(request.username(), request.title())
                     .getStatusCode().is2xxSuccessful();
 

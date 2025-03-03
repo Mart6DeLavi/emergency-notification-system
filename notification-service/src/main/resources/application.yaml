@@ -21,10 +21,8 @@ spring:
       group-id: notification-service
     topics:
       notifications:
-        email: email-notification
-        sms: sms-notification
-      producer:
-        delivery: message-delivery-service
+        email: notification-service-to-message-delivery-service-mail
+        sms: notification-service-to-message-delivery-service-sms
 
   liquibase:
     change-log: classpath:/db/changelog/db.changelog-master.yaml

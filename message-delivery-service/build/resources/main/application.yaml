@@ -1,0 +1,42 @@
+server:
+  port: 8005
+
+spring:
+  application:
+    name: message-delivery-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/Sensa_Message_Delivery_Service
+    username: ${POSTGRES_USERNAME}
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      username: ${REDIS_USERNAME}
+      password: ${REDIS_PASSWORD}
+      timeout: 60000
+      connect-timeout: 10s
+      ssl:
+        enabled: false
+      lettuce:
+        pool:
+          max-active: 10
+          max-idle: 10
+          min-idle: 2
+          max-wait: -1ms
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: message-delivery-service
+
+  liquibase:
+    change-log: classpath:/db/changelog/db.changelog-master.yaml
+
