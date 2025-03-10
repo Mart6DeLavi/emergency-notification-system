@@ -28,6 +28,17 @@ public class NotificationMapper {
                 .build();
     }
 
+    public NotificationResponse mapToResponse(NotificationRequest notificationRequest) {
+        return NotificationResponse.builder()
+                .clientUsername(notificationRequest.username())
+                .clientUsername(notificationRequest.senderEmail())
+                .title(notificationRequest.title())
+                .content(notificationRequest.content())
+                .status(notificationRequest.status())
+                .preferredChannel(notificationRequest.preferredChannel())
+                .build();
+    }
+
     public Notification update(NotificationRequest notificationRequest, Notification notification) {
         notification.setClientUsername(notificationRequest.username());
         notification.setTitle(notificationRequest.title());

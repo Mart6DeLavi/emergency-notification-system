@@ -15,7 +15,7 @@
       <jdbc-url>jdbc:postgresql://localhost:5432/Sensa_Authentication_Service</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
-    <data-source source="LOCAL" name="0@redis-10595.c61.us-east-1-3.ec2.redns.redis-cloud.com" uuid="f0460fd2-1dbe-4d48-b2b2-dd971157d719">
+    <data-source source="LOCAL" name="authentication-service" uuid="f0460fd2-1dbe-4d48-b2b2-dd971157d719">
       <driver-ref>redis</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>jdbc.RedisDriver</jdbc-driver>

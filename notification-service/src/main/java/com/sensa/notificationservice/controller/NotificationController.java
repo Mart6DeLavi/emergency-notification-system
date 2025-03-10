@@ -27,12 +27,12 @@ public class NotificationController {
         return ResponseEntity.status(CREATED).body(notificationResponse);
     }
 
-    @PatchMapping("/status/{clientUsername}")
+    @PatchMapping("/{status}")
     public ResponseEntity<NotificationResponse> updateStatus(
-            @PathVariable("clientUsername") String clientUsername,
-            @RequestParam("status") NotificationStatus status
-    ) {
-        NotificationResponse response = notificationService.updateNotificationStatus(clientUsername, status);
-        return ResponseEntity.status(OK).body(response);
+            @RequestBody NotificationRequest request,
+            @PathVariable NotificationStatus status) {
+
+        NotificationResponse response = notificationService.setStatus(request, status);
+        return ResponseEntity.ok(response);
     }
 }

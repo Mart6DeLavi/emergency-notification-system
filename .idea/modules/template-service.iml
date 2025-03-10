@@ -6,6 +6,10 @@
       <excludeFolder url="file://$MODULE_DIR$/../../template-service/.gradle" />
       <excludeFolder url="file://$MODULE_DIR$/../../template-service/build" />
     </content>
+    <content url="file://$MODULE_DIR$/../../template-service">
+      <excludeFolder url="file://$MODULE_DIR$/../../template-service/.gradle" />
+      <excludeFolder url="file://$MODULE_DIR$/../../template-service/build" />
+    </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>

@@ -45,7 +45,7 @@ public class Notification {
     private PreferredChannel preferredChannel;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    @Column(name = "created_at", nullable = true)
+    @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @Override
