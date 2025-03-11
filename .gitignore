@@ -2,3 +2,5 @@ amplicode.xml.idea/modules/authentication-service.main.iml
 .idea/modules/authentication-service.main.iml
 .idea/diff-generator.xml
 .idea/sqldialects.xml
+.idea/libraries
+.idea/vcs.xml
