@@ -1,6 +1,6 @@
 package com.sensa.usermanagementservice.dto;
 
-import com.sensa.usermanagementservice.data.enums.Gender;
+import com.sensa.usermanagementservice.model.Gender;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;

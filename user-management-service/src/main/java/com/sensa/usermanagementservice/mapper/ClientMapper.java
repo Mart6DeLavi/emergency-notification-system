@@ -2,7 +2,7 @@ package com.sensa.usermanagementservice.mapper;
 
 import com.sensa.usermanagementservice.config.SecurityConfig;
 import com.sensa.usermanagementservice.data.entity.Client;
-import com.sensa.usermanagementservice.data.enums.Role;
+import com.sensa.usermanagementservice.model.Role;
 import com.sensa.usermanagementservice.dto.ClientRegistrationDto;
 import com.sensa.usermanagementservice.dto.ClientResponse;
 import com.sensa.usermanagementservice.exception.UserNotRegisteredException;

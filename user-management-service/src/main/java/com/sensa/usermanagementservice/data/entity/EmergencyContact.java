@@ -5,43 +5,38 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.proxy.HibernateProxy;
 
 import java.util.Objects;
 
-@Entity(name = "emergency_contacts")
-@Getter
-@Setter
-@RequiredArgsConstructor
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@Entity
+@Table(name = "emergency_contacts")
 public class EmergencyContact {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "name", nullable = false)
     @NotBlank(message = "Name cannot be blank")
     @Size(max = 50, message = "Name cannot exceed 50 characters")
     private String name;
 
-    @Column(name = "second_name", nullable = false)
     @NotBlank(message = "Second name cannot be blank")
     @Size(max = 50, message = "Second name cannot exceed 50 characters")
     private String secondName;
 
-    @Column(name = "phone_number", nullable = false)
     @NotBlank(message = "Phone number cannot be blank")
     @Pattern(regexp = "\\+?[0-9]{10,15}", message = "Invalid phone number format")
     private String phoneNumber;
 
-    @Column(name = "email", unique = true, nullable = false)
     @Email(message = "Invalid email format")
     @NotBlank(message = "Email cannot be blank")
     private String email;
 
-    @Column(name = "relationship", nullable = false)
     @NotBlank(message = "Relationship cannot be blank")
     private String relationship;
 

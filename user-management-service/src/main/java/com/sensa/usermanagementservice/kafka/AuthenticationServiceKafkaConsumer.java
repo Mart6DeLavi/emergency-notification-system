@@ -43,7 +43,7 @@ public class AuthenticationServiceKafkaConsumer {
     )
     public void consume(UserAuthenticationDto dto) {
         executor.submit(() -> {
-           log.info("Received UserAuthenticationDto: {}", dto.getUsername());
+           log.info("Received UserAuthenticationDto: {}", dto.username());
 
             UserAuthenticationAnswerDto response = authenticationService.processAuthentication(dto);
 

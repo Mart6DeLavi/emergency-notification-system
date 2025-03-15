@@ -1,7 +1,7 @@
 package com.sensa.usermanagementservice.service;
 
 import com.sensa.usermanagementservice.data.entity.Client;
-import com.sensa.usermanagementservice.data.enums.PreferredCommunicationChannel;
+import com.sensa.usermanagementservice.model.PreferredCommunicationChannel;
 import com.sensa.usermanagementservice.data.repository.ClientRepository;
 import com.sensa.usermanagementservice.dto.ClientRegistrationDto;
 import com.sensa.usermanagementservice.dto.ClientResponse;
@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 @Slf4j
 @Component
@@ -35,20 +36,23 @@ public class ClientControllerMethods {
     }
 
     public ClientResponse addClient(ClientRegistrationDto clientRegistrationDto) {
-        Optional<Client> existingUser = clientRepository.findClientByUsername(clientRegistrationDto.username());
-        if (existingUser.isPresent()) {
-            throw new ClientRegistrationException("User with such username already exists");
-        }
+        clientRepository.findClientByUsername(clientRegistrationDto.username())
+                .ifPresent(user -> {
+                    throw new ClientRegistrationException("User with such username already exists");
+                });
 
-        try {
-            return Optional.of(clientRegistrationDto)
-                    .map(mapper::toEntity)
-                    .map(clientRepository::save)
-                    .map(mapper::mapToResponse)
-                    .orElseThrow(() -> new ClientRegistrationException("New user registration failed"));
-        } catch (DataIntegrityViolationException ex) {
-            throw new ClientRegistrationException("Username already exists");
-        }
+        return Stream.of(clientRegistrationDto)
+                .map(mapper::toEntity)
+                .map(client -> {
+                    try {
+                        return clientRepository.save(client);
+                    } catch (DataIntegrityViolationException ex) {
+                        throw new ClientRegistrationException("Username already exists");
+                    }
+                })
+                .map(mapper::mapToResponse)
+                .findFirst()
+                .orElseThrow(() -> new ClientRegistrationException("New user registration failed"));
     }
 
     public ClientResponse updateClient(String username, ClientRegistrationDto clientRegistrationDto) {
@@ -89,14 +93,15 @@ public class ClientControllerMethods {
 
     @Transactional
     public ResponseEntity<String> deleteClientByUsername(String username) {
-        try {
-            clientRepository.delete(findClientByUsername(username));
-            return ResponseEntity.ok(String.format("Client %s deleted successfully", username));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Something went wrong: " + e.getMessage());
-        }
+        return Optional.ofNullable(findClientByUsername(username))
+                .map(client -> {
+                    clientRepository.delete(client);
+                    return ResponseEntity.ok(String.format("Client %s deleted successfully", username));
+                })
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(String.format("Client with username %s not found", username)));
     }
-    
+
     public ClientResponse mapToResponse(Client client) {
         return mapper.mapToResponse(client);
     }

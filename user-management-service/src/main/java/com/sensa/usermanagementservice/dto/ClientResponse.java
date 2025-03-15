@@ -1,6 +1,6 @@
 package com.sensa.usermanagementservice.dto;
 
-import com.sensa.usermanagementservice.data.enums.PreferredCommunicationChannel;
+import com.sensa.usermanagementservice.model.PreferredCommunicationChannel;
 import lombok.Builder;
 
 @Builder

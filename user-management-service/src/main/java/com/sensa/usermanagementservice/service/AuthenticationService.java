@@ -19,10 +19,10 @@ public class AuthenticationService {
     }
 
     public UserAuthenticationAnswerDto processAuthentication(UserAuthenticationDto userAuthenticationDto) {
-        log.info("Processing  authentication for user: {}", userAuthenticationDto.getUsername());
+        log.info("Processing  authentication for user: {}", userAuthenticationDto.username());
 
         log.info("Checking if user exists in the database...");
-        boolean userExist = clientRepository.existsByUsername(userAuthenticationDto.getUsername());
+        boolean userExist = clientRepository.existsByUsername(userAuthenticationDto.username());
         log.info("User exist: {}", userExist);
         UserAuthenticationAnswer answer = userExist ? UserAuthenticationAnswer.FOUND : UserAuthenticationAnswer.NOTEXIST;
         return new UserAuthenticationAnswerDto(answer);
