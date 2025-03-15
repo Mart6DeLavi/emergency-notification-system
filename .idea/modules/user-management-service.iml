@@ -6,10 +6,6 @@
       <excludeFolder url="file://$MODULE_DIR$/../../user-management-service/.gradle" />
       <excludeFolder url="file://$MODULE_DIR$/../../user-management-service/build" />
     </content>
-    <content url="file://$MODULE_DIR$/../../user-management-service">
-      <excludeFolder url="file://$MODULE_DIR$/../../user-management-service/.gradle" />
-      <excludeFolder url="file://$MODULE_DIR$/../../user-management-service/build" />
-    </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>

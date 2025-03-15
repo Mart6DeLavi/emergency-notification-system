@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: message-delivery-service
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    client-id: message-delivery-service
+    topics:
+      notification:
+        message-delivery-service-to-notification-service
+
+services:
+  user-management-service: http://localhost:8000
+  notification-service: http://localhost:8004
+
+server:
+  port: 8005

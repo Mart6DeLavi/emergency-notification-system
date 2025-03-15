@@ -13,9 +13,6 @@
     <content url="file://$MODULE_DIR$/../../notification-service/src/test">
       <sourceFolder url="file://$MODULE_DIR$/../../notification-service/src/test/java" isTestSource="true" />
     </content>
-    <content url="file://$MODULE_DIR$/../../notification-service/src/test">
-      <sourceFolder url="file://$MODULE_DIR$/../../notification-service/src/test/java" isTestSource="true" />
-    </content>
     <orderEntry type="jdk" jdkName="graalvm-ce-21" jdkType="JavaSDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="notification-service.main" />
