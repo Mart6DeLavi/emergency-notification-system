@@ -14,12 +14,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
 import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -34,33 +36,38 @@ public class AuthenticationService {
     private final Queue<CompletableFuture<UserAuthenticationAnswerDto>> pendingRequests = new ConcurrentLinkedDeque<>();
 
     public String saveUserData(UserAuthenticationDto userAuthenticationDto) {
-        AuthEntity entity = UserAuthenticationDtoMapper.toEntity(userAuthenticationDto);
-        userStorageRepository.save(entity);
-        userManagementServiceKafkaProducer.sendToUserManagementService(userAuthenticationDto);
-        return "User data saved successfully";
+        return Stream.of(userAuthenticationDto)
+                .map(UserAuthenticationDtoMapper::toEntity)
+                .peek(userStorageRepository::save)
+                .peek(entity -> userManagementServiceKafkaProducer.sendToUserManagementService(userAuthenticationDto))
+                .map(entity -> "User data saved successfully")
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Failed to save user data"));
     }
 
     public String generateToken(UserAuthenticationDto userAuthenticationDto) {
         UUID requestId = UUID.randomUUID();
-
         CompletableFuture<UserAuthenticationAnswerDto> future = new CompletableFuture<>();
+
         pendingRequests.add(future);
-        userManagementServiceKafkaProducer.sendToUserManagementService(new UserAuthenticationDto(
-                userAuthenticationDto.username(),
-                basicSecurityConfig.passwordEncoder().encode(userAuthenticationDto.password())
-        ));
+
+        Stream.of(userAuthenticationDto)
+                .map(dto -> new UserAuthenticationDto(dto.username(), basicSecurityConfig.passwordEncoder().encode(dto.password())))
+                .forEach(userManagementServiceKafkaProducer::sendToUserManagementService);
 
         try {
-            UserAuthenticationAnswerDto response = future.get(5, TimeUnit.SECONDS);
-            if (response.getAnswer().equals(UserAuthenticationAnswer.FOUND)) {
-                String token = jwtTokenUtils.generateToken(userAuthenticationDto);
-                log.info("✅ Generated token for user: {}", userAuthenticationDto.username());
-                redisRecoveryService.saveToken(userAuthenticationDto.username(), token);
-                return token;
-            } else {
-                log.warn("❌ User not found in User Management Service.");
-                return null;
-            }
+            return Optional.ofNullable(future.get(5, TimeUnit.SECONDS))
+                    .filter(response -> response.getAnswer().equals(UserAuthenticationAnswer.FOUND))
+                    .map(response -> jwtTokenUtils.generateToken(userAuthenticationDto))
+                    .map(token -> {
+                        log.info("✅ Generated token for user: {}", userAuthenticationDto.username());
+                        redisRecoveryService.saveToken(userAuthenticationDto.username(), token);
+                        return token;
+                    })
+                    .orElseGet(() -> {
+                        log.warn("❌ User not found in User Management Service.");
+                        return null;
+                    });
         } catch (TimeoutException ex) {
             log.error("⏳ Timeout: No response from User Management Service");
             return null;

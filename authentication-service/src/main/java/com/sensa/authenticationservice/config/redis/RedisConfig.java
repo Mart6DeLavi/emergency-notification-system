@@ -15,6 +15,8 @@ import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.JedisClientConfig;
 import redis.clients.jedis.UnifiedJedis;
 
+import java.util.stream.Stream;
+
 @EnableCaching
 @Configuration
 public class RedisConfig {
@@ -31,28 +33,27 @@ public class RedisConfig {
     @Getter
     private static final String REDIS_PASSWORD = System.getenv("REDIS_PASSWORD");
 
-    JedisClientConfig config = DefaultJedisClientConfig.builder()
-            .user(getREDIS_USER())
-            .password(getREDIS_PASSWORD())
+    private final JedisClientConfig config = DefaultJedisClientConfig.builder()
+            .user(REDIS_USER)
+            .password(REDIS_PASSWORD)
             .build();
 
-    UnifiedJedis jedis = new UnifiedJedis(
-            new HostAndPort(getREDIS_HOST(), getREDIS_PORT()),
-            config
-    );
+    private final UnifiedJedis jedis = new UnifiedJedis(new HostAndPort(REDIS_HOST, REDIS_PORT), config);
 
     @Bean
     public RedisTemplate<String, RedisTokenDto> redisTemplate(RedisConnectionFactory redisConnectionFactory, ObjectMapper objectMapper) {
-        RedisTemplate<String, RedisTokenDto> template = new RedisTemplate<>();
         GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer(objectMapper);
 
-        template.setConnectionFactory(redisConnectionFactory);
-        template.setKeySerializer(new StringRedisSerializer());
-        template.setValueSerializer(serializer);
-        template.setHashKeySerializer(new StringRedisSerializer());
-        template.setHashValueSerializer(serializer);
-
-        template.afterPropertiesSet();
-        return template;
+        return Stream.of(new RedisTemplate<String, RedisTokenDto>())
+                .peek(template -> {
+                    template.setConnectionFactory(redisConnectionFactory);
+                    template.setKeySerializer(new StringRedisSerializer());
+                    template.setValueSerializer(serializer);
+                    template.setHashKeySerializer(new StringRedisSerializer());
+                    template.setHashValueSerializer(serializer);
+                    template.afterPropertiesSet();
+                })
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Failed to create RedisTemplate"));
     }
 }
