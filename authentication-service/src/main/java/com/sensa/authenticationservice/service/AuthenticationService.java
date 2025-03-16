@@ -15,7 +15,6 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
 import java.util.Queue;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.TimeUnit;
@@ -41,7 +40,6 @@ public class AuthenticationService {
     }
 
     public String generateToken(UserAuthenticationDto userAuthenticationDto) {
-        UUID requestId = UUID.randomUUID();
 
         CompletableFuture<UserAuthenticationAnswerDto> future = new CompletableFuture<>();
         pendingRequests.add(future);

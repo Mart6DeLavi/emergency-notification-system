@@ -5,27 +5,30 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.proxy.HibernateProxy;
 
 import java.util.Objects;
 
-@Entity
+@Entity(name = "authentication_user")
 @Getter
 @Setter
 @RequiredArgsConstructor
-@Table(name = "authentication_user")
+@DynamicUpdate
+@Table(name = "authentication_user", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"username"})
+})
 public class AuthEntity {
+
     @Id
-    @Column(name = "id")
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "auth_seq_gen")
+    @SequenceGenerator(name = "auth_seq_gen", sequenceName = "auth_seq", allocationSize = 1)
     private Long id;
 
-    @Column(name = "username", nullable = false)
-    @NotBlank(message = "Username can not be empty")
+    @NotBlank(message = "Username cannot be empty")
     private String username;
 
-    @Column(name = "password", nullable = false)
-    @NotBlank(message = "Password can not be empty")
+    @NotBlank(message = "Password cannot be empty")
     private String password;
 
     @Override
@@ -44,3 +47,4 @@ public class AuthEntity {
         return this instanceof HibernateProxy proxy ? proxy.getHibernateLazyInitializer().getPersistentClass().hashCode() : getClass().hashCode();
     }
 }
+

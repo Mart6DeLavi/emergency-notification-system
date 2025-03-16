@@ -13,6 +13,11 @@ import java.time.LocalDateTime;
 public interface SystemDataRepository extends JpaRepository<SystemData, Long> {
 
     @Modifying
-    @Query("DELETE FROM SystemData s WHERE s.createdAt < :cutoffTime")
+    @Query("""
+            DELETE
+            FROM SystemData s
+            WHERE
+            s.createdAt < :cutoffTime
+    """)
     void deleteByCreatedAtBefore(@Param("cutoffTime") LocalDateTime cutoffTime);
 }

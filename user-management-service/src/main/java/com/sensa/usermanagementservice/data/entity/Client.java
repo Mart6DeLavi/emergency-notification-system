@@ -1,7 +1,7 @@
 package com.sensa.usermanagementservice.data.entity;
 
-import com.sensa.usermanagementservice.data.enums.PreferredCommunicationChannel;
-import com.sensa.usermanagementservice.data.enums.Role;
+import com.sensa.usermanagementservice.model.PreferredCommunicationChannel;
+import com.sensa.usermanagementservice.model.Role;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Table;
 import jakarta.persistence.*;

@@ -8,40 +8,42 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.proxy.HibernateProxy;
 
 import java.util.Objects;
 
-@Entity(name = "emergency_contacts")
+@Entity(name = "emergency_contact")
 @Getter
 @Setter
 @RequiredArgsConstructor
+@DynamicUpdate
+@Table(name = "emergency_contacts", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"email"})
+})
 public class EmergencyContact {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "emergency_contacts_seq_gen")
+    @SequenceGenerator(name = "emergency_contacts_seq_gen", sequenceName = "emergency_contacts_seq", allocationSize = 1)
     private Long id;
 
-    @Column(name = "name", nullable = false)
     @NotBlank(message = "Name cannot be blank")
     @Size(max = 50, message = "Name cannot exceed 50 characters")
     private String name;
 
-    @Column(name = "second_name", nullable = false)
     @NotBlank(message = "Second name cannot be blank")
     @Size(max = 50, message = "Second name cannot exceed 50 characters")
     private String secondName;
 
-    @Column(name = "phone_number", nullable = false)
     @NotBlank(message = "Phone number cannot be blank")
     @Pattern(regexp = "\\+?[0-9]{10,15}", message = "Invalid phone number format")
     private String phoneNumber;
 
-    @Column(name = "email", unique = true, nullable = false)
     @Email(message = "Invalid email format")
     @NotBlank(message = "Email cannot be blank")
     private String email;
 
-    @Column(name = "relationship", nullable = false)
     @NotBlank(message = "Relationship cannot be blank")
     private String relationship;
 

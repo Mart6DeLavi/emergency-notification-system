@@ -11,6 +11,7 @@ import java.util.List;
 @Repository
 public interface RedisBackupRepository extends JpaRepository<RedisBackupEntity, Long> {
 
+    @Deprecated
     @Query("SELECT r FROM RedisBackupEntity r WHERE r.id IN " +
     "(SELECT MAX(r2.id) FROM RedisBackupEntity r2 WHERE r2.username = r.username AND r2.token IS NOT NULL " +
     "AND r2.id >= :since GROUP BY r2.username)")

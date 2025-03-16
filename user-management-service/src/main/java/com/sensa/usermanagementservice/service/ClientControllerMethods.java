@@ -1,13 +1,13 @@
 package com.sensa.usermanagementservice.service;
 
 import com.sensa.usermanagementservice.data.entity.Client;
-import com.sensa.usermanagementservice.data.enums.PreferredCommunicationChannel;
 import com.sensa.usermanagementservice.data.repository.ClientRepository;
 import com.sensa.usermanagementservice.dto.ClientRegistrationDto;
 import com.sensa.usermanagementservice.dto.ClientResponse;
 import com.sensa.usermanagementservice.exception.ClientRegistrationException;
 import com.sensa.usermanagementservice.exception.UserNotFoundException;
 import com.sensa.usermanagementservice.mapper.ClientMapper;
+import com.sensa.usermanagementservice.model.PreferredCommunicationChannel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -16,7 +16,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -27,12 +26,8 @@ import java.util.function.Supplier;
 @RequiredArgsConstructor
 public class ClientControllerMethods {
     private final ClientRepository clientRepository;
-    private final ClientServiceImpl clientService;
     private final ClientMapper mapper;
 
-    public List<Client> getAllClients() {
-        return clientService.getAllClients();
-    }
 
     public ClientResponse addClient(ClientRegistrationDto clientRegistrationDto) {
         Optional<Client> existingUser = clientRepository.findClientByUsername(clientRegistrationDto.username());

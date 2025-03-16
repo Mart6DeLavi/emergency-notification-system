@@ -1,4 +1,4 @@
-package com.sensa.usermanagementservice.data.enums;
+package com.sensa.usermanagementservice.model;
 
 public enum PreferredCommunicationChannel {
     EMAIL, PHONECALL, SMS

@@ -1,7 +1,6 @@
 package com.sensa.usermanagementservice.data.entity;
 
-import com.sensa.usermanagementservice.data.enums.Gender;
-import jakarta.persistence.Column;
+import com.sensa.usermanagementservice.model.Gender;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -24,24 +23,19 @@ import java.util.Objects;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class AdditionalUserInfo {
-    @Column(name = "gender")
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
-    @Column(name = "blood_group")
     @Pattern(regexp = "^(A|B|AB|O)[+-]$", message = "Invalid blood group")
     private String bloodGroup;
 
-    @Column(name = "height")
     @Min(value = 50, message = "Height must be at least 50 cm")
     @Max(value = 300, message = "Height cannot exceed 300 cm")
     private Double height;
 
-    @Column(name = "country")
     @Size(max = 100, message = "Country name cannot exceed 100 characters")
     private String country;
 
-    @Column(name = "city")
     @Size(max = 100, message = "City name cannot exceed 100 characters")
     private String city;
 

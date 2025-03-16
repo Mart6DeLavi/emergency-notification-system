@@ -41,14 +41,4 @@ public class RedisUtils {
             return false;
         }
     }
-
-    public void deleteTokenFromRedis(String username) {
-        String redisKey = "user: " + username;
-        try {
-            redisTemplate.delete(redisKey);
-            log.info("🗑️ Token deleted from Redis for user: {}", username);
-        } catch (DataAccessException ex) {
-            log.error("❌ Unable to delete token fro Redis for user: {}", username, ex);
-        }
-    }
 }
