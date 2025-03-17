@@ -9,6 +9,12 @@ spring:
       notification:
         message-delivery-service-to-notification-service
 
+  eureka:
+    client:
+      service-url:
+        defaultZone: http://localhost:8761/eureka/
+
+
 services:
   user-management-service: http://localhost:8000
   notification-service: http://localhost:8004
