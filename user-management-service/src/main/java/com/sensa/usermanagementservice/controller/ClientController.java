@@ -1,7 +1,6 @@
 package com.sensa.usermanagementservice.controller;
 
 import com.sensa.usermanagementservice.data.entity.Client;
-import com.sensa.usermanagementservice.dto.AdditionalUserInfoUpdateDto;
 import com.sensa.usermanagementservice.dto.ClientRegistrationDto;
 import com.sensa.usermanagementservice.dto.ClientResponse;
 import com.sensa.usermanagementservice.exception.ClientRegistrationException;
@@ -13,8 +12,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @Slf4j
 @RestController
