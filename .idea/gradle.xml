@@ -13,6 +13,15 @@
         </option>
       </GradleProjectSettings>
       <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/discovery-server" />
+        <option name="gradleJvm" value="graalvm-ce-22" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/discovery-server" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
         <option name="externalProjectPath" value="$PROJECT_DIR$/message-delivery-service" />
         <option name="gradleJvm" value="graalvm-ce-22" />
         <option name="modules">
@@ -38,6 +47,10 @@
             <option value="$PROJECT_DIR$/template-service" />
           </set>
         </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/template-service/discovery-server" />
+        <option name="gradleJvm" value="graalvm-ce-22" />
       </GradleProjectSettings>
       <GradleProjectSettings>
         <option name="externalProjectPath" value="$PROJECT_DIR$/user-management-service" />

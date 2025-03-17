@@ -3,28 +3,4 @@
   <component name="AmplicodeJpaPluginProjectSettings">
     <option name="lastSelectedLanguage" value="Kotlin" />
   </component>
-  <component name="AmplicodePersistenceUnitSettings">
-    <persistence-units>
-      <persistence-unit moduleName="authentication-service.main" name="Default">
-        <packages>
-          <package value="com.sensa.authenticationservice" />
-        </packages>
-      </persistence-unit>
-      <persistence-unit moduleName="notification-service.main" name="Default">
-        <packages>
-          <package value="com.sensa.notificationservice" />
-        </packages>
-      </persistence-unit>
-      <persistence-unit moduleName="template-service.main" name="Default">
-        <packages>
-          <package value="com.sensa.templateservice" />
-        </packages>
-      </persistence-unit>
-      <persistence-unit moduleName="user-management-service.main" name="Default">
-        <packages>
-          <package value="com.sensa.usermanagementservice" />
-        </packages>
-      </persistence-unit>
-    </persistence-units>
-  </component>
 </project>
