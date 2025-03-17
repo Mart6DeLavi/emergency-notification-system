@@ -57,7 +57,6 @@ public class NotificationService {
       return response;
     }
 
-    //TODO: сделать методы чтобы изменять статусы уведомления
 
     public NotificationResponse setStatus(NotificationRequest request, NotificationStatus status) {
         return NotificationResponse.builder()

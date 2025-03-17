@@ -31,7 +31,7 @@ public class NotificationMapper {
     public NotificationResponse mapToResponse(NotificationRequest notificationRequest) {
         return NotificationResponse.builder()
                 .clientUsername(notificationRequest.username())
-                .clientUsername(notificationRequest.senderEmail())
+                .senderEmail(notificationRequest.senderEmail())
                 .title(notificationRequest.title())
                 .content(notificationRequest.content())
                 .status(notificationRequest.status())
