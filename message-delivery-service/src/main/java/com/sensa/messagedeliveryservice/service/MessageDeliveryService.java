@@ -14,12 +14,12 @@ public class MessageDeliveryService {
     @KafkaListener(topics = "notification-service-to-message-delivery-service-mail")
     public MessageResponse sendMessageThroughEmail(NotificationKafkaDelivery notificationKafkaDelivery) {
         return null;
-        //TODO: сделать отправку сообщений на почту через Amazon SES
+        //TODO: send messages to the mail via Amazon SES
     }
 
     @KafkaListener(topics = "notification-service-to-message-delivery-service-sms")
     public MessageResponse sendMessageThroughSms(NotificationKafkaDelivery notificationKafkaDelivery) {
         return null;
-        //TODO: сделать отравку сообщений через смс Twilio
+        //TODO: send messages via SMS through Twilio
     }
 }
