@@ -4,11 +4,18 @@
   <component name="GradleSettings">
     <option name="linkedExternalProjectsSettings">
       <GradleProjectSettings>
-        <option name="externalProjectPath" value="$PROJECT_DIR$/api-gateway" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
         <option name="gradleJvm" value="graalvm-ce-22" />
         <option name="modules">
           <set>
+            <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/api-gateway" />
+            <option value="$PROJECT_DIR$/authentication-service" />
+            <option value="$PROJECT_DIR$/discovery-server" />
+            <option value="$PROJECT_DIR$/message-delivery-service" />
+            <option value="$PROJECT_DIR$/notification-service" />
+            <option value="$PROJECT_DIR$/template-service" />
+            <option value="$PROJECT_DIR$/user-management-service" />
           </set>
         </option>
       </GradleProjectSettings>

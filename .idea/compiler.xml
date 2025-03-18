@@ -7,11 +7,33 @@
         <processorPath useClasspath="false">
           <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.projectlombok/lombok/1.18.36/5a30490a6e14977d97d9c73c924c1f1b5311ea95/lombok-1.18.36.jar" />
         </processorPath>
-        <module name="authentication-service.main" />
+        <module name="Secure_Emergency_Notification_System_and_Alerts.authentication-service.main" />
+        <module name="Secure_Emergency_Notification_System_and_Alerts.notification-service.main" />
+        <module name="Secure_Emergency_Notification_System_and_Alerts.discovery-server.main" />
+        <module name="Secure_Emergency_Notification_System_and_Alerts.api-gateway.main" />
+        <module name="Secure_Emergency_Notification_System_and_Alerts.message-delivery-service.main" />
+      </profile>
+      <profile name="Gradle Imported" enabled="true">
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="false">
+          <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.mapstruct/mapstruct-processor/1.5.5.Final/897f6f115930b936287bef552bf5fe28cc64717d/mapstruct-processor-1.5.5.Final.jar" />
+          <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.projectlombok/lombok/1.18.36/5a30490a6e14977d97d9c73c924c1f1b5311ea95/lombok-1.18.36.jar" />
+        </processorPath>
+        <module name="Secure_Emergency_Notification_System_and_Alerts.template-service.main" />
+      </profile>
+      <profile name="Gradle Imported" enabled="true">
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="false">
+          <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.projectlombok/lombok/1.18.36/5a30490a6e14977d97d9c73c924c1f1b5311ea95/lombok-1.18.36.jar" />
+          <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.mapstruct/mapstruct-processor/1.6.0/d48e787cbd31bfd8766cdcd255ca102e974309/mapstruct-processor-1.6.0.jar" />
+          <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.projectlombok/lombok-mapstruct-binding/0.2.0/2f1cf9ced7b720ba4996c942b816669e63f0fa4f/lombok-mapstruct-binding-0.2.0.jar" />
+        </processorPath>
+        <module name="Secure_Emergency_Notification_System_and_Alerts.user-management-service.main" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="com.sensa.authentication-service.main" target="21" />
+      <module name="discovery-server" target="21" />
     </bytecodeTargetLevel>
   </component>
 </project>

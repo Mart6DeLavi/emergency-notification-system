@@ -1,0 +1,9 @@
+rootProject.name = 'Secure Emergency Notification System and Alerts'
+
+include("api-gateway")
+include("authentication-service")
+include("discovery-server")
+include("message-delivery-service")
+include("notification-service")
+include("template-service")
+include("user-management-service")
