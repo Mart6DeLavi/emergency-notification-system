@@ -2,6 +2,6 @@
 .idea/sqldialects.xml
 .idea/libraries
 .idea/vcs.xml
-.idea
-jmeter-test
+idea/
+jmeter-test/
 amplicode.xml
