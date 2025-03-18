@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  api-gateway:
+    build: .
+    image: api-gateway:latest
+    container_name: api_gateway
+
+    ports:
+      - "8007:8007"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://localhost:8761/eureka

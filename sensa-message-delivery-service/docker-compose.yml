@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  # --- message-delivery-service ---
+  message-delivery-service:
+    build: .
+    image: message-delivery-service:latest
+    container_name: message-delivery-service
+    ports:
+      - "8005:8005"
+    environment:
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_CLIENT_ID: message-delivery-service
+
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://localhost:8761/eureka/"
+
+    depends_on:
+      - zookeeper
+      - kafka
+
+    networks:
+      - message-net
+
+  # --- Zookeeper ---
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - message-net
+
+  # --- Kafka ---
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - message-net
+
+networks:
+  message-net:
+    driver: bridge

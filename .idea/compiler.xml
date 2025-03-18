@@ -32,22 +32,7 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="api-gateway" target="21" />
-      <module name="api-gateway.main" target="21" />
-      <module name="api-gateway.test" target="21" />
-      <module name="authentication-service" target="21" />
-      <module name="authentication-service.main" target="21" />
-      <module name="authentication-service.test" target="21" />
       <module name="com.sensa.authentication-service.main" target="21" />
-      <module name="discovery-server" target="21" />
-      <module name="discovery-server.main" target="21" />
-      <module name="discovery-server.test" target="21" />
-      <module name="message-delivery-service" target="21" />
-      <module name="message-delivery-service.main" target="21" />
-      <module name="message-delivery-service.test" target="21" />
-      <module name="notification-service" target="21" />
-      <module name="notification-service.main" target="21" />
-      <module name="notification-service.test" target="21" />
       <module name="Secure_Emergency_Notification_System_and_Alerts.sensa-api-gateway" target="21" />
       <module name="Secure_Emergency_Notification_System_and_Alerts.sensa-api-gateway.main" target="21" />
       <module name="Secure_Emergency_Notification_System_and_Alerts.sensa-api-gateway.test" target="21" />
@@ -69,12 +54,6 @@
       <module name="Secure_Emergency_Notification_System_and_Alerts.sensa-user-management-service" target="21" />
       <module name="Secure_Emergency_Notification_System_and_Alerts.sensa-user-management-service.main" target="21" />
       <module name="Secure_Emergency_Notification_System_and_Alerts.sensa-user-management-service.test" target="21" />
-      <module name="template-service" target="21" />
-      <module name="template-service.main" target="21" />
-      <module name="template-service.test" target="21" />
-      <module name="user-management-service" target="21" />
-      <module name="user-management-service.main" target="21" />
-      <module name="user-management-service.test" target="21" />
     </bytecodeTargetLevel>
   </component>
 </project>

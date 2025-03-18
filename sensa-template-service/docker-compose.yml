@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  # --- template-service ---
+  template-service:
+    build: .
+    image: template-service:latest
+    container_name: template-service
+    ports:
+      - "8003:8003"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 28859013
+
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://localhost:8761/eureka/"
+    depends_on:
+      - postgres
+    networks:
+      - template-net
+
+  # --- PostgreSQL ---
+  postgres:
+    image: postgres:15.2
+    container_name: postgres
+    environment:
+      POSTGRES_DB: Sensa_Template_Service
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 28859013
+    ports:
+      - "5432:5432"
+    networks:
+      - template-net
+
+networks:
+  template-net:
+    driver: bridge

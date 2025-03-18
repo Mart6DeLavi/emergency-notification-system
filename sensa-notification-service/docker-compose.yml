@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  # --- notification-service ---
+  notification-service:
+    build: .
+    image: notification-service:latest
+    container_name: notification-service
+    ports:
+      - "8004:8004"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 28859013
+
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://localhost:8761/eureka/"
+
+    depends_on:
+      - postgres
+      - zookeeper
+      - kafka
+
+    networks:
+      - notification-net
+
+  # --- PostgreSQL ---
+  postgres:
+    image: postgres:15.2
+    container_name: postgres
+    environment:
+      POSTGRES_DB: Sensa_Notification_Service
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 28859013
+    ports:
+      - "5432:5432"
+    networks:
+      - notification-net
+
+  # --- Zookeeper ---
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - notification-net
+
+  # --- Kafka ---
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - notification-net
+
+networks:
+  notification-net:
+    driver: bridge

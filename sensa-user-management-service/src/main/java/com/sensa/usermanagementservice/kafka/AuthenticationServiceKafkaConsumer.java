@@ -31,7 +31,7 @@ public class AuthenticationServiceKafkaConsumer {
         this.authenticationServiceKafkaProducer = authenticationServiceKafkaProducer;
         this.executor = Executors.newFixedThreadPool(10, r -> {
            Thread thread = new Thread(r);
-           thread.setName("AuthenticationServiceKafkaConsumer-" + thread.getId());
+           thread.setName("AuthenticationServiceKafkaConsumer-" + System.nanoTime());
            thread.setDaemon(true);
            return thread;
         });
