@@ -8,6 +8,8 @@ spring:
     topics:
       notification:
         message-delivery-service-to-notification-service
+    consumer:
+      group-id: message-delivery-service
 
   eureka:
     client:
