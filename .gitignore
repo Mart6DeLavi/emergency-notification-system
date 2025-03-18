@@ -5,3 +5,7 @@
 idea/
 jmeter-test/
 amplicode.xml
+build/
+.idea
+.gradle
+gradle
