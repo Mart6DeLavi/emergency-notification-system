@@ -28,22 +28,16 @@ ext {
 }
 
 dependencies {
-	// Реактивный стек, на котором построен Spring Cloud Gateway:
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 
-	// Основной компонент API Gateway:
 	implementation 'org.springframework.cloud:spring-cloud-starter-gateway'
 
-	// Eureka Client для обнаружения микросервисов:
 	implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
 
-	// Actuator для мониторинга (опционально):
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
-	// JSON (обычно уже включён в webflux, но можно добавить явно):
 	implementation 'org.springframework.boot:spring-boot-starter-json'
 
-	// Lombok (опционально)
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 

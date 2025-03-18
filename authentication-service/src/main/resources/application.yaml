@@ -37,6 +37,11 @@ spring:
   liquibase:
     change-log: classpath:db.changelog/db.changelog-master.yaml
 
+  eureka:
+    client:
+      service-url:
+        defaultZone: http://localhost:8761/eureka/
+
 server:
   port: 8081
 
