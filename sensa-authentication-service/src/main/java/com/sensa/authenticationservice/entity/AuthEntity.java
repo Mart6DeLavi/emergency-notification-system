@@ -21,8 +21,8 @@ import java.util.Objects;
 public class AuthEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "auth_seq_gen")
-    @SequenceGenerator(name = "auth_seq_gen", sequenceName = "auth_seq", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_seq_gen")
+    @SequenceGenerator(name = "user_seq_gen", sequenceName = "user_seq", allocationSize = 1)
     private Long id;
 
     @NotBlank(message = "Username cannot be empty")

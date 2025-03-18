@@ -1,9 +1,9 @@
 rootProject.name = 'Secure Emergency Notification System and Alerts'
 
-include("api-gateway")
-include("authentication-service")
-include("discovery-server")
-include("message-delivery-service")
-include("notification-service")
-include("template-service")
-include("user-management-service")
+include("sensa-api-gateway")
+include("sensa-authentication-service")
+include("sensa-discovery-server")
+include("sensa-message-delivery-service")
+include("sensa-notification-service")
+include("sensa-template-service")
+include("sensa-user-management-service")

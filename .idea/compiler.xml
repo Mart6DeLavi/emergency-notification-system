@@ -7,11 +7,11 @@
         <processorPath useClasspath="false">
           <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.projectlombok/lombok/1.18.36/5a30490a6e14977d97d9c73c924c1f1b5311ea95/lombok-1.18.36.jar" />
         </processorPath>
-        <module name="Secure_Emergency_Notification_System_and_Alerts.authentication-service.main" />
-        <module name="Secure_Emergency_Notification_System_and_Alerts.notification-service.main" />
-        <module name="Secure_Emergency_Notification_System_and_Alerts.discovery-server.main" />
-        <module name="Secure_Emergency_Notification_System_and_Alerts.api-gateway.main" />
-        <module name="Secure_Emergency_Notification_System_and_Alerts.message-delivery-service.main" />
+        <module name="Secure_Emergency_Notification_System_and_Alerts.sensa-authentication-service.main" />
+        <module name="Secure_Emergency_Notification_System_and_Alerts.sensa-discovery-server.main" />
+        <module name="Secure_Emergency_Notification_System_and_Alerts.sensa-api-gateway.main" />
+        <module name="Secure_Emergency_Notification_System_and_Alerts.sensa-notification-service.main" />
+        <module name="Secure_Emergency_Notification_System_and_Alerts.sensa-message-delivery-service.main" />
       </profile>
       <profile name="Gradle Imported" enabled="true">
         <outputRelativeToContentRoot value="true" />
@@ -19,7 +19,7 @@
           <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.mapstruct/mapstruct-processor/1.5.5.Final/897f6f115930b936287bef552bf5fe28cc64717d/mapstruct-processor-1.5.5.Final.jar" />
           <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.projectlombok/lombok/1.18.36/5a30490a6e14977d97d9c73c924c1f1b5311ea95/lombok-1.18.36.jar" />
         </processorPath>
-        <module name="Secure_Emergency_Notification_System_and_Alerts.template-service.main" />
+        <module name="Secure_Emergency_Notification_System_and_Alerts.sensa-template-service.main" />
       </profile>
       <profile name="Gradle Imported" enabled="true">
         <outputRelativeToContentRoot value="true" />
@@ -28,12 +28,53 @@
           <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.mapstruct/mapstruct-processor/1.6.0/d48e787cbd31bfd8766cdcd255ca102e974309/mapstruct-processor-1.6.0.jar" />
           <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.projectlombok/lombok-mapstruct-binding/0.2.0/2f1cf9ced7b720ba4996c942b816669e63f0fa4f/lombok-mapstruct-binding-0.2.0.jar" />
         </processorPath>
-        <module name="Secure_Emergency_Notification_System_and_Alerts.user-management-service.main" />
+        <module name="Secure_Emergency_Notification_System_and_Alerts.sensa-user-management-service.main" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
+      <module name="api-gateway" target="21" />
+      <module name="api-gateway.main" target="21" />
+      <module name="api-gateway.test" target="21" />
+      <module name="authentication-service" target="21" />
+      <module name="authentication-service.main" target="21" />
+      <module name="authentication-service.test" target="21" />
       <module name="com.sensa.authentication-service.main" target="21" />
       <module name="discovery-server" target="21" />
+      <module name="discovery-server.main" target="21" />
+      <module name="discovery-server.test" target="21" />
+      <module name="message-delivery-service" target="21" />
+      <module name="message-delivery-service.main" target="21" />
+      <module name="message-delivery-service.test" target="21" />
+      <module name="notification-service" target="21" />
+      <module name="notification-service.main" target="21" />
+      <module name="notification-service.test" target="21" />
+      <module name="Secure_Emergency_Notification_System_and_Alerts.sensa-api-gateway" target="21" />
+      <module name="Secure_Emergency_Notification_System_and_Alerts.sensa-api-gateway.main" target="21" />
+      <module name="Secure_Emergency_Notification_System_and_Alerts.sensa-api-gateway.test" target="21" />
+      <module name="Secure_Emergency_Notification_System_and_Alerts.sensa-authentication-service" target="21" />
+      <module name="Secure_Emergency_Notification_System_and_Alerts.sensa-authentication-service.main" target="21" />
+      <module name="Secure_Emergency_Notification_System_and_Alerts.sensa-authentication-service.test" target="21" />
+      <module name="Secure_Emergency_Notification_System_and_Alerts.sensa-discovery-server" target="21" />
+      <module name="Secure_Emergency_Notification_System_and_Alerts.sensa-discovery-server.main" target="21" />
+      <module name="Secure_Emergency_Notification_System_and_Alerts.sensa-discovery-server.test" target="21" />
+      <module name="Secure_Emergency_Notification_System_and_Alerts.sensa-message-delivery-service" target="21" />
+      <module name="Secure_Emergency_Notification_System_and_Alerts.sensa-message-delivery-service.main" target="21" />
+      <module name="Secure_Emergency_Notification_System_and_Alerts.sensa-message-delivery-service.test" target="21" />
+      <module name="Secure_Emergency_Notification_System_and_Alerts.sensa-notification-service" target="21" />
+      <module name="Secure_Emergency_Notification_System_and_Alerts.sensa-notification-service.main" target="21" />
+      <module name="Secure_Emergency_Notification_System_and_Alerts.sensa-notification-service.test" target="21" />
+      <module name="Secure_Emergency_Notification_System_and_Alerts.sensa-template-service" target="21" />
+      <module name="Secure_Emergency_Notification_System_and_Alerts.sensa-template-service.main" target="21" />
+      <module name="Secure_Emergency_Notification_System_and_Alerts.sensa-template-service.test" target="21" />
+      <module name="Secure_Emergency_Notification_System_and_Alerts.sensa-user-management-service" target="21" />
+      <module name="Secure_Emergency_Notification_System_and_Alerts.sensa-user-management-service.main" target="21" />
+      <module name="Secure_Emergency_Notification_System_and_Alerts.sensa-user-management-service.test" target="21" />
+      <module name="template-service" target="21" />
+      <module name="template-service.main" target="21" />
+      <module name="template-service.test" target="21" />
+      <module name="user-management-service" target="21" />
+      <module name="user-management-service.main" target="21" />
+      <module name="user-management-service.test" target="21" />
     </bytecodeTargetLevel>
   </component>
 </project>
