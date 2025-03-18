@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      default-filters:
+        - RewritePath=/api/(?<segment>.*), /${segment}
+      routes:
+        - id: authentication-service
+          uri: lb://authentication-service
+          predicates:
+            - Path=/api/auth/**
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/notifications/**
+        - id: template-service
+          uri: lb://template-service
+          predicates:
+            - Path=/api/templates/**
+        - id: user-management-service
+          uri: lb://user-management-service
+          predicates:
+            - Path=/api/users/**
+
+
+  eureka:
+    client:
+      service-url:
+        defaultZone: http://localhost:8761/eureka/
+server:
+  port: 8007
