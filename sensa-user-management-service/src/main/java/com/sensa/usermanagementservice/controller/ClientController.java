@@ -6,6 +6,9 @@ import com.sensa.usermanagementservice.dto.ClientResponse;
 import com.sensa.usermanagementservice.exception.ClientRegistrationException;
 import com.sensa.usermanagementservice.exception.UserNotFoundException;
 import com.sensa.usermanagementservice.service.ClientControllerMethods;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -20,6 +23,12 @@ import org.springframework.web.bind.annotation.*;
 public class ClientController {
     private final ClientControllerMethods clientControllerMethods;
 
+    @Operation(summary = "Create client", description = "Register new client in system")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Client successfully registered"),
+            @ApiResponse(responseCode = "400", description = "Incorrect registration data"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @PostMapping("/create")
     public ResponseEntity<ClientResponse> createClient(@RequestBody final ClientRegistrationDto clientRegistrationDto) {
         try {
@@ -34,6 +43,13 @@ public class ClientController {
         }
     }
 
+    @Operation(summary = "Update client data", description = "Updates information about the client by user name.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "The client's data has been successfully updated"),
+            @ApiResponse(responseCode = "404", description = "The client was not found"),
+            @ApiResponse(responseCode = "400", description = "Data integrity error"),
+            @ApiResponse(responseCode = "500", description = "Error on the server")
+    })
     @PatchMapping("/{username}/update")
     public ResponseEntity<ClientResponse> updateClient(
             @PathVariable("username") String username,
@@ -54,6 +70,12 @@ public class ClientController {
         }
     }
 
+    @Operation(summary = "Get customer data", description = "Returns customer information by username.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Client data successfully received"),
+            @ApiResponse(responseCode = "404", description = "Client not found"),
+            @ApiResponse(responseCode = "500", description = "Error on the server")
+    })
     @GetMapping("/{username}")
     public ResponseEntity<ClientResponse> getClientByUsername(@PathVariable("username") String username) {
         try {
@@ -68,6 +90,12 @@ public class ClientController {
         }
     }
 
+    @Operation(summary = "Delete client", description = "Deletes client from the system by username.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Client successfully deleted"),
+            @ApiResponse(responseCode = "404", description = "Client not found"),
+            @ApiResponse(responseCode = "500", description = "Error on the server")
+    })
     @DeleteMapping("/{username}/delete")
     public ResponseEntity<String> deleteClient(@PathVariable("username") String username) {
         return clientControllerMethods.deleteClientByUsername(username);
