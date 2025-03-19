@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project version="4">
-  <component name="DiffGenerationConfig">
-    <option name="targetDbValue" value="ba2c93f9-5aa6-4702-8d1f-fbc4cd61d98b" />
-    <option name="updateChangeLogPath" value="authentication-service/src/main/resources/db.changelog/db.changelog-master.yaml" />
-    <option name="updateDbConnectionName" value="a62a1440-6180-4daf-97dc-73362e815cf8" />
-  </component>
-</project>
