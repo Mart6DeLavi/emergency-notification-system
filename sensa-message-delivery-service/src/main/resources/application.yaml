@@ -11,10 +11,12 @@ spring:
     consumer:
       group-id: message-delivery-service
 
-  eureka:
-    client:
-      service-url:
-        defaultZone: http://localhost:8761/eureka/
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+    fetchRegistry: true
+    registerWithEureka: true
 
 
 services:

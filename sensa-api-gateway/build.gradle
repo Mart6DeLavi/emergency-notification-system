@@ -55,6 +55,10 @@ dependencies {
 	implementation 'org.springdoc:springdoc-openapi-starter-webflux-api:2.2.0'
 }
 
+dependencies {
+	// https://mvnrepository.com/artifact/io.netty/netty-resolver-dns-native-macos
+	implementation group: 'io.netty', name: 'netty-resolver-dns-native-macos', version: '4.2.0.RC4'
+}
 
 tasks.named('test') {
 	useJUnitPlatform()
