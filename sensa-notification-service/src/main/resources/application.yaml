@@ -27,18 +27,19 @@ spring:
   liquibase:
     change-log: classpath:/db/changelog/db.changelog-master.yaml
 
-  eureka:
-    client:
-      service-url:
-        defaultZone: http://localhost:8761/eureka/
-
 springdoc:
   api-docs:
-    path: /v3/api-docs
+    path: /notification-service/api-docs
     swagger-ui:
       path: /swagger-ui.html
       operations-sorter: method
 
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+    fetchRegistry: true
+    registerWithEureka: true
 
 services:
   template-service:

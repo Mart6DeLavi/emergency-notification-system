@@ -2,10 +2,13 @@
 .idea/sqldialects.xml
 .idea/libraries
 .idea/vcs.xml
-idea/
-jmeter-test/
+.idea/
 amplicode.xml
 build/
 .idea
 .gradle
-gradle
+.gradle/
+.DS_Store
+
+Emergency Notification System Diagram.excalidraw
+Emergency Notification System Diagram.excalidraw.png
