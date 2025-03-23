@@ -14,7 +14,7 @@
     <orderEntry type="library" name="Gradle: org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:4.2.0" level="project" />
     <orderEntry type="library" name="Gradle: org.springframework.boot:spring-boot-starter-actuator:3.4.3" level="project" />
     <orderEntry type="library" name="Gradle: org.springframework.boot:spring-boot-starter-json:3.4.3" level="project" />
-    <orderEntry type="library" name="Gradle: org.springdoc:springdoc-openapi-starter-webflux-ui:2.2.0" level="project" />
+    <orderEntry type="library" name="Gradle: org.springdoc:springdoc-openapi-starter-webflux-ui:2.0.0" level="project" />
     <orderEntry type="library" name="Gradle: org.springdoc:springdoc-openapi-starter-webflux-api:2.2.0" level="project" />
     <orderEntry type="library" name="Gradle: io.netty:netty-resolver-dns-native-macos:4.2.0.RC4" level="project" />
     <orderEntry type="library" name="Gradle: io.netty:netty-resolver-dns-native-macos:osx-x86_64:4.2.0.RC4" level="project" />
@@ -35,7 +35,9 @@
     <orderEntry type="library" name="Gradle: com.fasterxml.jackson.module:jackson-module-parameter-names:2.18.2" level="project" />
     <orderEntry type="library" name="Gradle: com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.18.2" level="project" />
     <orderEntry type="library" name="Gradle: com.fasterxml.jackson.core:jackson-databind:2.18.2" level="project" />
-    <orderEntry type="library" name="Gradle: org.webjars:swagger-ui:5.2.0" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars:swagger-ui:4.15.5" level="project" />
+    <orderEntry type="library" name="Gradle: org.webjars:webjars-locator-core:0.59" level="project" />
+    <orderEntry type="library" name="Gradle: io.github.classgraph:classgraph:4.8.149" level="project" />
     <orderEntry type="library" name="Gradle: org.springdoc:springdoc-openapi-starter-common:2.2.0" level="project" />
     <orderEntry type="library" name="Gradle: io.netty:netty-resolver-dns-classes-macos:4.1.118.Final" level="project" />
     <orderEntry type="library" name="Gradle: org.springframework.boot:spring-boot-test-autoconfigure:3.4.3" level="project" />

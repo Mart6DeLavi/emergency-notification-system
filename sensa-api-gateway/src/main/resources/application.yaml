@@ -8,7 +8,6 @@ spring:
   cloud:
     gateway:
       routes:
-        # --------------------- AUTHENTICATION-SERVICE ---------------------
         - id: authentication-service
           uri: lb://authentication-service
           predicates:
@@ -16,24 +15,6 @@ spring:
           filters:
             - RewritePath= '^/api/authentication(?<segment>/?.*)', '/api/v1/authentication${segment}'
 
-        # Прокидываем OpenAPI JSON/YAML
-        - id: authentication-service-docs
-          uri: lb://authentication-service
-          predicates:
-            - Path=/authentication-service/api-docs/**
-          filters:
-            # Передаём всё, что после /authentication-service, без изменений
-            - RewritePath= '^/authentication-service(?<segment>/?.*)','${segment}'
-
-        # Прокидываем сам Swagger UI (если в сервисе swagger-ui.html)
-        - id: authentication-service-swagger-ui
-          uri: lb://authentication-service
-          predicates:
-            - Path=/swagger/authentication-service/swagger-ui.html
-          filters:
-            - RewritePath= '^/swagger/authentication-service/swagger-ui.html', '/swagger-ui.html'
-
-        # --------------------- NOTIFICATION-SERVICE ---------------------
         - id: notification-service
           uri: lb://notification-service
           predicates:
@@ -41,21 +22,6 @@ spring:
           filters:
             - RewritePath= '^/api/notifications(?<segment>/?.*)', '/api/v1/notifications${segment}'
 
-        - id: notification-service-docs
-          uri: lb://notification-service
-          predicates:
-            - Path=/notification-service/api-docs/**
-          filters:
-            - RewritePath= '^/notification-service(?<segment>/?.*)','${segment}'
-
-        - id: notification-service-swagger-ui
-          uri: lb://notification-service
-          predicates:
-            - Path=/swagger/notification-service/swagger-ui.html
-          filters:
-            - RewritePath= '^/swagger/notification-service/swagger-ui.html', '/swagger-ui.html'
-
-        # --------------------- TEMPLATE-SERVICE ---------------------
         - id: template-service
           uri: lb://template-service
           predicates:
@@ -63,21 +29,6 @@ spring:
           filters:
             - RewritePath= '^/api/templates(?<segment>/?.*)', '/api/v1/templates${segment}'
 
-        - id: template-service-docs
-          uri: lb://template-service
-          predicates:
-            - Path=/template-service/api-docs/**
-          filters:
-            - RewritePath= '^/template-service(?<segment>/?.*)','${segment}'
-
-        - id: template-service-swagger-ui
-          uri: lb://template-service
-          predicates:
-            - Path=/swagger/template-service/swagger-ui.html
-          filters:
-            - RewritePath= '^/swagger/template-service/swagger-ui.html', '/swagger-ui.html'
-
-        # --------------------- USER-MANAGEMENT-SERVICE ---------------------
         - id: user-management-service
           uri: lb://user-management-service
           predicates:
@@ -85,6 +36,31 @@ spring:
           filters:
             - RewritePath= '^/api/clients(?<segment>/?.*)', '/api/v1/clients${segment}'
 
+        # Authentication Service docs
+        - id: authentication-service-docs
+          uri: lb://authentication-service
+          predicates:
+            - Path=/authentication-service/api-docs/**
+          filters:
+            - RewritePath= '^/authentication-service(?<segment>/?.*)','${segment}'
+
+        # Notification Service docs
+        - id: notification-service-docs
+          uri: lb://notification-service
+          predicates:
+            - Path=/notification-service/api-docs/**
+          filters:
+            - RewritePath= '^/notification-service(?<segment>/?.*)','${segment}'
+
+        # Template Service docs
+        - id: template-service-docs
+          uri: lb://template-service
+          predicates:
+            - Path=/template-service/api-docs/**
+          filters:
+            - RewritePath= '^/template-service(?<segment>/?.*)','${segment}'
+
+        # User Management Service docs
         - id: user-management-service-docs
           uri: lb://user-management-service
           predicates:
@@ -92,9 +68,29 @@ spring:
           filters:
             - RewritePath= '^/user-management-service(?<segment>/?.*)','${segment}'
 
-        - id: user-management-service-swagger-ui
-          uri: lb://user-management-service
-          predicates:
-            - Path=/swagger/user-management-service/swagger-ui.html
-          filters:
-            - RewritePath= '^/swagger/user-management-service/swagger-ui.html', '/swagger-ui.html'
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka
+    fetchRegistry: true
+    registerWithEureka: true
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+
+    url: /authentication-service/api-docs
+
+    urls:
+      - name: authentication-service
+        url: /authentication-service/api-docs
+      - name: notification-service
+        url: /notification-service/api-docs
+      - name: template-service
+        url: /template-service/api-docs
+      - name: user-management-service
+        url: /user-management-service/api-docs
