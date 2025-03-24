@@ -123,7 +123,3 @@ Together, these design choices ensure that the system remains responsive and sca
 ## 💬 Feedback & Contributions
 
 Contributions are welcome! If you’d like to suggest a feature, report a bug, or help with development, feel free to open an issue or submit a pull request.
-
----
-
-> ⚠️ This project is still in development. Breaking changes may occur and stability is not guaranteed for production use.
