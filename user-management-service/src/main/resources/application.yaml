@@ -1,19 +1,30 @@
 spring:
   application:
-    name: user-management-service
+    name: user-data-management-service
 
-  datasource:
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/Sensa_User_Data_Management_Service
     username: ${POSTGRES_USERNAME}
     password: ${POSTGRES_PASSWORD}
-    url: jdbc:postgresql://localhost:5432/Sensa_User_Management_Service
-    driver-class-name: org.postgresql.Driver
 
   liquibase:
     change-log: classpath:/db/changelog/db.changelog-master.yaml
 
   kafka:
+    bootstrap-servers: localhost:9092
     consumer:
-      group-id: user-management-service
+      group-id: user-data-management-service
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.sensa.usermanagementservice.dto"
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+  redis:
+    host: localhost
+    port: 6379
 
 eureka:
   client:
@@ -27,7 +38,7 @@ server:
 
 springdoc:
   api-docs:
-    path: /user-management-service/api-docs
+    path: /user-data-management-service/api-docs
   swagger-ui:
     path: /swagger-ui.html
     operations-sorter: method
