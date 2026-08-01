@@ -1,64 +1,78 @@
 package com.sensa.authenticationservice.util;
 
-import com.sensa.authenticationservice.dto.UserAuthenticationDto;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import lombok.Getter;
+import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.time.Duration;
+import javax.crypto.SecretKey;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.UUID;
 
 @Slf4j
-@Getter
 @Component
 public class JwtTokenUtils {
 
-    @Value("${jwt.user_secret}")
-    private String userSecret;
+    private final SecretKey secretKey;
+    private final long lifetimeMs;
 
-    @Value("${jwt.user_secret_lifetime}")
-    private Duration userSecretLifetime;
+    public JwtTokenUtils(
+            @Value("${jwt.secret}") String secret,
+            @Value("${jwt.lifetime}") String lifetime) {
+        this.secretKey = Keys.hmacShaKeyFor(secret.getBytes());
+        this.lifetimeMs = parseLifetime(lifetime);
+    }
 
-    public String generateToken(UserAuthenticationDto dto) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("username", dto.username());
+    private long parseLifetime(String lifetime) {
+        String num = lifetime.replaceAll("[^0-9]", "");
+        if (lifetime.endsWith("ms")) return Long.parseLong(num);
+        if (lifetime.endsWith("s")) return Long.parseLong(num) * 1000L;
+        if (lifetime.endsWith("m")) return Long.parseLong(num) * 60 * 1000L;
+        if (lifetime.endsWith("h")) return Long.parseLong(num) * 60 * 60 * 1000L;
+        if (lifetime.endsWith("d")) return Long.parseLong(num) * 24 * 60 * 60 * 1000L;
+        return 24 * 60 * 60 * 1000L;
+    }
 
-        Date issudeDate = new Date();
-        Date expirationDate = new Date(issudeDate.getTime() + getUserSecretLifetime().toMillis());
+    public String generateToken(UUID userId, String email) {
+        Date now = new Date();
+        Date expiration = new Date(now.getTime() + lifetimeMs);
 
         return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(dto.username())
-                .setIssuedAt(issudeDate)
-                .setExpiration(expirationDate)
-                .signWith(SignatureAlgorithm.HS256, getUserSecret())
+                .claim("userId", userId.toString())
+                .claim("email", email)
+                .subject(email)
+                .issuedAt(now)
+                .expiration(expiration)
+                .signWith(secretKey)
                 .compact();
     }
 
-
-    public Claims getAllClaimsFromToken(String token) {
+    public Claims parseToken(String token) {
         return Jwts.parser()
-                .setSigningKey(getUserSecret())
-                .parseClaimsJws(token)
-                .getBody();
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
     public boolean isValidToken(String token) {
         try {
-            getAllClaimsFromToken(token);
+            parseToken(token);
             return true;
         } catch (Exception ex) {
+            log.warn("Invalid JWT token: {}", ex.getMessage());
             return false;
         }
     }
 
-    public String getUsernameFromToken(String token) {
-        return getAllClaimsFromToken(token).getSubject();
+    public UUID getUserIdFromToken(String token) {
+        String userId = parseToken(token).get("userId", String.class);
+        return UUID.fromString(userId);
+    }
+
+    public String getEmailFromToken(String token) {
+        return parseToken(token).getSubject();
     }
 }

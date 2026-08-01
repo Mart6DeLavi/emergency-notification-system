@@ -1,7 +1,13 @@
 package com.sensa.authenticationservice.entity;
 
-import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -9,6 +15,7 @@ import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.proxy.HibernateProxy;
 
 import java.util.Objects;
+import java.util.UUID;
 
 @Entity(name = "authentication_user")
 @Getter
@@ -16,7 +23,8 @@ import java.util.Objects;
 @RequiredArgsConstructor
 @DynamicUpdate
 @Table(name = "authentication_user", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"username"})
+        @UniqueConstraint(columnNames = {"email"}),
+        @UniqueConstraint(columnNames = {"user_id"})
 })
 public class AuthEntity {
 
@@ -25,10 +33,13 @@ public class AuthEntity {
     @SequenceGenerator(name = "user_seq_gen", sequenceName = "user_seq", allocationSize = 1)
     private Long id;
 
-    @NotBlank(message = "Username cannot be empty")
-    private String username;
+    @Column(name = "user_id", nullable = false, unique = true)
+    private UUID userId;
 
-    @NotBlank(message = "Password cannot be empty")
+    @Column(nullable = false, unique = true)
+    private String email;
+
+    @Column(nullable = false)
     private String password;
 
     @Override
@@ -47,4 +58,3 @@ public class AuthEntity {
         return this instanceof HibernateProxy proxy ? proxy.getHibernateLazyInitializer().getPersistentClass().hashCode() : getClass().hashCode();
     }
 }
-
