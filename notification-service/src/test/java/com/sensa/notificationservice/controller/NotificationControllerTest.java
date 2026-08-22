@@ -80,7 +80,7 @@ class NotificationControllerTest {
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        when(notificationService.createNotification(any(), any(), anyString())).thenReturn(response);
+        when(notificationService.createNotification(any(), any())).thenReturn(response);
 
         mockMvc.perform(post("/api/v1/notifications")
                         .header("Authorization", "Bearer " + jwtToken)

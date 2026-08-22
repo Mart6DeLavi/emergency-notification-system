@@ -17,8 +17,13 @@ import java.util.UUID;
 @Component
 public class JwtTokenUtils {
 
+    public static final UUID SYSTEM_USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+
     @Value("${jwt.secret}")
     private String jwtSecret;
+
+    @Value("${jwt.lifetime:86400000}")
+    private long jwtLifetimeMs;
 
     private SecretKey secretKey;
 
@@ -56,5 +61,20 @@ public class JwtTokenUtils {
 
     public Date getExpirationFromToken(String token) {
         return parseToken(token).getExpiration();
+    }
+
+    public String generateToken(UUID userId, String email) {
+        Date now = new Date();
+        return Jwts.builder()
+                .subject(email)
+                .claim("userId", userId.toString())
+                .issuedAt(now)
+                .expiration(new Date(now.getTime() + jwtLifetimeMs))
+                .signWith(secretKey)
+                .compact();
+    }
+
+    public String generateServiceToken() {
+        return generateToken(SYSTEM_USER_ID, "system@notification-service");
     }
 }

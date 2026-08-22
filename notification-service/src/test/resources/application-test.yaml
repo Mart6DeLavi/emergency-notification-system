@@ -18,6 +18,8 @@ spring:
 
   kafka:
     bootstrap-servers: localhost:9092
+    topics:
+      delivery: notification.delivery
 
   cloud:
     discovery:
@@ -47,7 +49,10 @@ eureka:
 
 jwt:
   secret: test-secret-key-for-notification-service-testing-256-bits-long
+  lifetime: 86400000
 
 services:
   template-service:
     url: http://localhost:8003
+  user-data-management-service:
+    url: http://localhost:8000

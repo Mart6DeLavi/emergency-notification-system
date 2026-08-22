@@ -3,8 +3,8 @@ package com.sensa.notificationservice.mapper;
 import com.sensa.notificationservice.dto.NotificationRequest;
 import com.sensa.notificationservice.dto.NotificationResponse;
 import com.sensa.notificationservice.dto.kafka.NotificationDeliveryEvent;
+import com.sensa.notificationservice.dto.kafka.UserLocationResponse;
 import com.sensa.notificationservice.entity.Notification;
-import com.sensa.notificationservice.model.NotificationChannel;
 import com.sensa.notificationservice.model.NotificationStatus;
 import org.springframework.stereotype.Component;
 
@@ -38,13 +38,14 @@ public class NotificationMapper {
                 .build();
     }
 
-    public NotificationDeliveryEvent toDeliveryEvent(Notification entity) {
+    public NotificationDeliveryEvent toDeliveryEvent(UserLocationResponse recipient, String channel, String title, String content) {
         return NotificationDeliveryEvent.builder()
-                .userId(entity.getUserId())
-                .templateName(entity.getTemplateName())
-                .title(entity.getTitle())
-                .content(entity.getContent())
-                .channel(entity.getChannel().name().toLowerCase())
+                .userId(recipient.userId())
+                .email(recipient.email())
+                .phoneNumber(recipient.phoneNumber())
+                .channel(channel)
+                .title(title)
+                .content(content)
                 .build();
     }
 }
