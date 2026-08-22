@@ -1,39 +1,22 @@
 package com.sensa.notificationservice.repository;
 
 import com.sensa.notificationservice.entity.Notification;
+import com.sensa.notificationservice.model.NotificationChannel;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
 
-    @Query(""" 
-            SELECT n 
-            FROM Notification n 
-            WHERE 
-            n.clientUsername = :clientUsername 
-    """)
-    Optional<Notification> findByClientUsername(@Param("clientUsername") String clientUsername);
+    List<Notification> findByUserIdOrderByCreatedAtDesc(UUID userId);
 
-    @Query("""
-            SELECT n 
-            FROM Notification n
-            WHERE
-            n.title = :title
-    """)
-    Optional<Notification> findByTitle(@Param("title") String title);
+    Optional<Notification> findByIdAndUserId(Long id, UUID userId);
 
-    @Query("""
-            SELECT n
-            FROM Notification n
-            WHERE
-            n.clientUsername = :clientUsername
-            AND
-            n.title = :title
-""")
-    Optional<Notification> findByClientUsernameAndTitle(@Param("clientUsername") String clientUsername, @Param("title") String title);
+    int deleteByIdAndUserId(Long id, UUID userId);
+
+    List<Notification> findByChannel(NotificationChannel channel);
 }

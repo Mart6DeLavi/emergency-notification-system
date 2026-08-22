@@ -1,17 +1,21 @@
 package com.sensa.notificationservice.dto;
 
-import com.sensa.notificationservice.model.NotificationStatus;
-import com.sensa.notificationservice.model.PreferredChannel;
+import com.sensa.notificationservice.model.NotificationChannel;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
-
-import java.time.LocalDateTime;
 
 @Builder
 public record NotificationRequest(
-        String username,
-        String senderEmail,
+        @NotBlank(message = "Template name is required")
+        String templateName,
+
+        @NotBlank(message = "Title is required")
         String title,
+
+        @NotBlank(message = "Content is required")
         String content,
-        NotificationStatus status,
-        PreferredChannel preferredChannel) {
-}
+
+        @NotNull(message = "Channel is required")
+        NotificationChannel channel
+) {}

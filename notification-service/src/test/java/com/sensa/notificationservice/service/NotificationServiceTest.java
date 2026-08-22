@@ -1,157 +1,200 @@
 package com.sensa.notificationservice.service;
 
-import com.sensa.notificationservice.client.TemplateClient;
-import com.sensa.notificationservice.client.UserManagementClient;
 import com.sensa.notificationservice.dto.NotificationRequest;
 import com.sensa.notificationservice.dto.NotificationResponse;
-import com.sensa.notificationservice.dto.client.ClientResponse;
-import com.sensa.notificationservice.dto.template.TemplateResponse;
+import com.sensa.notificationservice.dto.kafka.NotificationDeliveryEvent;
+import com.sensa.notificationservice.entity.Notification;
+import com.sensa.notificationservice.exception.NotificationNotFoundException;
 import com.sensa.notificationservice.mapper.NotificationMapper;
+import com.sensa.notificationservice.model.NotificationChannel;
 import com.sensa.notificationservice.model.NotificationStatus;
-import com.sensa.notificationservice.model.PreferredChannel;
-import com.sensa.notificationservice.model.PreferredCommunicationChannel;
 import com.sensa.notificationservice.repository.NotificationRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.web.client.RestTemplate;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class NotificationServiceTest {
 
     @Mock
-    private KafkaTemplate<String, Object> kafkaTemplate;
-    @Mock
     private NotificationRepository notificationRepository;
-    @Mock
-    private TemplateClient templateClient;
-    @Mock
-    private UserManagementClient userManagementClient;
+
     @Mock
     private NotificationMapper notificationMapper;
+
     @Mock
-    private KafkaProducerService kafkaProducerService;
+    private KafkaTemplate<String, NotificationDeliveryEvent> kafkaTemplate;
+
+    @Mock
+    private RestTemplate restTemplate;
+
     @InjectMocks
     private NotificationService notificationService;
 
+    private final UUID userId = UUID.randomUUID();
+    private final String jwtToken = "test-jwt";
+
     @Test
-    void testCreateNotification_TemplateExists_Email() {
+    void createNotification_Success() {
         NotificationRequest request = NotificationRequest.builder()
-                .username("user1")
-                .senderEmail("sender@example.com")
-                .title("Test Title")
-                .content("Test Content")
-                .status(NotificationStatus.NEW)
-                .preferredChannel(PreferredChannel.EMAIL)
+                .templateName("alert-template")
+                .title("Emergency Alert")
+                .content("Evacuation required")
+                .channel(NotificationChannel.PUSH)
                 .build();
 
-        TemplateResponse templateResponse = TemplateResponse.builder()
-                .clientUsername("user1")
-                .title("Test Title")
-                .content("Some content")
-                .build();
-        when(templateClient.findTemplate(eq("user1"), eq("Test Title")))
-                .thenReturn(ResponseEntity.status(HttpStatus.OK).body(templateResponse));
-
-        ClientResponse client = ClientResponse.builder()
+        Notification entity = Notification.builder()
                 .id(1L)
-                .username("user1")
-                .email("user1@example.com")
-                .phoneNumber("1234567890")
-                .preferredCommunicationChannel(PreferredCommunicationChannel.EMAIL)
+                .userId(userId)
+                .templateName("alert-template")
+                .title("Emergency Alert")
+                .content("Evacuation required")
+                .channel(NotificationChannel.PUSH)
+                .status(NotificationStatus.PENDING)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
                 .build();
-        when(userManagementClient.getClientByUsername("user1"))
-                .thenReturn(ResponseEntity.ok(client));
 
-        NotificationResponse expectedResponse = NotificationResponse.builder()
-                .clientUsername("user1")
-                .senderEmail("sender@example.com")
-                .title("Test Title")
-                .content("Test Content")
-                .status(NotificationStatus.NEW)
-                .preferredChannel(PreferredChannel.EMAIL)
-                .createdAt(null)
-                .message("Notification created")
+        NotificationDeliveryEvent event = NotificationDeliveryEvent.builder()
+                .userId(userId)
+                .templateName("alert-template")
+                .title("Emergency Alert")
+                .content("Evacuation required")
+                .channel("push")
                 .build();
-        when(notificationMapper.mapToResponse(request)).thenReturn(expectedResponse);
 
-        NotificationResponse response = notificationService.createNotification(request);
-        assertEquals(expectedResponse, response);
-        verify(kafkaProducerService).sendEmailTopic(request);
+        NotificationResponse response = NotificationResponse.builder()
+                .id(1L)
+                .userId(userId)
+                .templateName("alert-template")
+                .title("Emergency Alert")
+                .content("Evacuation required")
+                .channel(NotificationChannel.PUSH)
+                .status(NotificationStatus.PENDING)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        when(notificationMapper.toEntity(request, userId)).thenReturn(entity);
+        when(notificationRepository.save(entity)).thenReturn(entity);
+        when(notificationMapper.toDeliveryEvent(entity)).thenReturn(event);
+        when(notificationMapper.toResponse(entity)).thenReturn(response);
+
+        NotificationResponse result = notificationService.createNotification(request, userId, jwtToken);
+
+        assertNotNull(result);
+        assertEquals("Emergency Alert", result.title());
+        assertEquals(NotificationChannel.PUSH, result.channel());
+        verify(kafkaTemplate).send(eq("notification.push"), eq(event));
     }
 
     @Test
-    void testCreateNotification_TemplateNotExists_SMS() {
+    void createNotification_EmailChannel() {
         NotificationRequest request = NotificationRequest.builder()
-                .username("user1")
-                .senderEmail("sender@example.com")
-                .title("Promo")
-                .content("Discount available!")
-                .status(NotificationStatus.NEW)
-                .preferredChannel(PreferredChannel.PHONE)
+                .templateName("welcome")
+                .title("Welcome")
+                .content("Hello!")
+                .channel(NotificationChannel.EMAIL)
                 .build();
 
-        when(templateClient.findTemplate(eq("user1"), eq("Promo")))
-                .thenReturn(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
-        TemplateResponse createdTemplate = TemplateResponse.builder()
-                .clientUsername("user1")
-                .title("Promo")
-                .content("Discount available!")
+        Notification entity = Notification.builder()
+                .id(2L)
+                .userId(userId)
+                .templateName("welcome")
+                .title("Welcome")
+                .content("Hello!")
+                .channel(NotificationChannel.EMAIL)
+                .status(NotificationStatus.PENDING)
                 .build();
-        when(templateClient.createTemplate(eq("user1"), any())).thenReturn(ResponseEntity.ok(createdTemplate));
 
-        ClientResponse client = ClientResponse.builder()
-                .id(1L)
-                .username("user1")
-                .email("user1@example.com")
-                .phoneNumber("1234567890")
-                .preferredCommunicationChannel(PreferredCommunicationChannel.SMS)
+        NotificationDeliveryEvent event = NotificationDeliveryEvent.builder()
+                .userId(userId)
+                .templateName("welcome")
+                .title("Welcome")
+                .content("Hello!")
+                .channel("email")
                 .build();
-        when(userManagementClient.getClientByUsername("user1")).thenReturn(ResponseEntity.ok(client));
 
-        NotificationResponse expectedResponse = NotificationResponse.builder()
-                .clientUsername("user1")
-                .senderEmail("sender@example.com")
-                .title("Promo")
-                .content("Discount available!")
-                .status(NotificationStatus.NEW)
-                .preferredChannel(PreferredChannel.PHONE)
-                .createdAt(null)
-                .message("Notification created")
-                .build();
-        when(notificationMapper.mapToResponse(request)).thenReturn(expectedResponse);
+        when(notificationMapper.toEntity(request, userId)).thenReturn(entity);
+        when(notificationRepository.save(entity)).thenReturn(entity);
+        when(notificationMapper.toDeliveryEvent(entity)).thenReturn(event);
+        when(notificationMapper.toResponse(entity)).thenReturn(mock(NotificationResponse.class));
 
-        NotificationResponse response = notificationService.createNotification(request);
-        assertEquals(expectedResponse, response);
-        verify(kafkaProducerService).sendSmsTopic(request);
+        notificationService.createNotification(request, userId, jwtToken);
+
+        verify(kafkaTemplate).send(eq("notification.email"), eq(event));
     }
 
     @Test
-    void testSetStatus() {
-        NotificationRequest request = NotificationRequest.builder()
-                .username("user1")
-                .senderEmail("sender@example.com")
-                .title("Status Update")
-                .content("Updated Content")
-                .status(NotificationStatus.NEW)
-                .preferredChannel(PreferredChannel.EMAIL)
+    void getMyNotifications_ReturnsList() {
+        Notification entity = Notification.builder()
+                .id(1L)
+                .userId(userId)
+                .templateName("test")
+                .title("Test")
+                .content("Test content")
+                .channel(NotificationChannel.PUSH)
+                .status(NotificationStatus.PENDING)
                 .build();
 
-        NotificationResponse response = notificationService.setStatus(request, NotificationStatus.SENT);
-        assertEquals("user1", response.clientUsername());
-        assertEquals("sender@example.com", response.senderEmail());
-        assertEquals("Status Update", response.title());
-        assertEquals("Updated Content", response.content());
-        assertEquals(NotificationStatus.SENT, response.status());
+        when(notificationRepository.findByUserIdOrderByCreatedAtDesc(userId)).thenReturn(List.of(entity));
+        when(notificationMapper.toResponse(entity)).thenReturn(mock(NotificationResponse.class));
+
+        List<NotificationResponse> result = notificationService.getMyNotifications(userId);
+
+        assertFalse(result.isEmpty());
+        verify(notificationRepository).findByUserIdOrderByCreatedAtDesc(userId);
+    }
+
+    @Test
+    void getNotification_Success() {
+        Notification entity = Notification.builder()
+                .id(1L)
+                .userId(userId)
+                .title("Test")
+                .build();
+
+        when(notificationRepository.findByIdAndUserId(1L, userId)).thenReturn(Optional.of(entity));
+        when(notificationMapper.toResponse(entity)).thenReturn(mock(NotificationResponse.class));
+
+        NotificationResponse result = notificationService.getNotification(1L, userId);
+
+        assertNotNull(result);
+    }
+
+    @Test
+    void getNotification_NotFound() {
+        when(notificationRepository.findByIdAndUserId(99L, userId)).thenReturn(Optional.empty());
+
+        assertThrows(NotificationNotFoundException.class,
+                () -> notificationService.getNotification(99L, userId));
+    }
+
+    @Test
+    void deleteNotification_Success() {
+        when(notificationRepository.deleteByIdAndUserId(1L, userId)).thenReturn(1);
+
+        assertDoesNotThrow(() -> notificationService.deleteNotification(1L, userId));
+    }
+
+    @Test
+    void deleteNotification_NotFound() {
+        when(notificationRepository.deleteByIdAndUserId(99L, userId)).thenReturn(0);
+
+        assertThrows(NotificationNotFoundException.class,
+                () -> notificationService.deleteNotification(99L, userId));
     }
 }

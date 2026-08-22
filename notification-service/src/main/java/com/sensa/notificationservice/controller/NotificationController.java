@@ -2,7 +2,6 @@ package com.sensa.notificationservice.controller;
 
 import com.sensa.notificationservice.dto.NotificationRequest;
 import com.sensa.notificationservice.dto.NotificationResponse;
-import com.sensa.notificationservice.model.NotificationStatus;
 import com.sensa.notificationservice.service.NotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -10,52 +9,74 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import static org.springframework.http.HttpStatus.CREATED;
+import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/notifications")
 @RequiredArgsConstructor
-@Tag(name = "Notifications API", description = "Notification control")
+@Tag(name = "Notifications API", description = "Notification management")
 public class NotificationController {
 
     private final NotificationService notificationService;
 
-    @Operation(
-            summary = "Create notification",
-            description = "Creates a new notification and returns data about it"
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Notification successfully created"),
-            @ApiResponse(responseCode = "400", description = "Incorrect notification data"),
+    @Operation(summary = "Create notification", description = "Creates a new notification and sends it for delivery")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Notification created"),
+            @ApiResponse(responseCode = "400", description = "Invalid data"),
             @ApiResponse(responseCode = "500", description = "Server error")
     })
-    @PostMapping("/create")
+    @PostMapping
     public ResponseEntity<NotificationResponse> createNotification(
-            @RequestBody @Valid NotificationRequest notificationRequest
+            @AuthenticationPrincipal UUID userId,
+            @RequestHeader("Authorization") String authHeader,
+            @RequestBody @Valid NotificationRequest request
     ) {
-        NotificationResponse notificationResponse = notificationService.createNotification(notificationRequest);
-        return ResponseEntity.status(CREATED).body(notificationResponse);
+        String jwtToken = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
+        NotificationResponse response = notificationService.createNotification(request, userId, jwtToken);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @Operation(
-            summary = "Update notification status",
-            description = "Updates the status of an existing notification"
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Notification status updated"),
-            @ApiResponse(responseCode = "400", description = "Invalid request"),
-            @ApiResponse(responseCode = "404", description = "Notification not found"),
-            @ApiResponse(responseCode = "500", description = "Server error")
+    @Operation(summary = "Get my notifications", description = "Returns all notifications for current user")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Notifications list")
     })
-    @PatchMapping("/{status}")
-    public ResponseEntity<NotificationResponse> updateStatus(
-            @RequestBody NotificationRequest request,
-            @PathVariable NotificationStatus status
+    @GetMapping
+    public ResponseEntity<List<NotificationResponse>> getMyNotifications(
+            @AuthenticationPrincipal UUID userId
     ) {
-        NotificationResponse response = notificationService.setStatus(request, status);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(notificationService.getMyNotifications(userId));
+    }
+
+    @Operation(summary = "Get notification by ID", description = "Returns notification by its ID")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Notification found"),
+            @ApiResponse(responseCode = "404", description = "Notification not found")
+    })
+    @GetMapping("/{id}")
+    public ResponseEntity<NotificationResponse> getNotification(
+            @AuthenticationPrincipal UUID userId,
+            @PathVariable Long id
+    ) {
+        return ResponseEntity.ok(notificationService.getNotification(id, userId));
+    }
+
+    @Operation(summary = "Delete notification", description = "Deletes notification by its ID")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Notification deleted"),
+            @ApiResponse(responseCode = "404", description = "Notification not found")
+    })
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteNotification(
+            @AuthenticationPrincipal UUID userId,
+            @PathVariable Long id
+    ) {
+        notificationService.deleteNotification(id, userId);
+        return ResponseEntity.noContent().build();
     }
 }

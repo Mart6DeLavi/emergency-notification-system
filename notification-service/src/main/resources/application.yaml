@@ -17,22 +17,12 @@ spring:
 
   kafka:
     bootstrap-servers: localhost:9092
-    consumer:
-      group-id: notification-service
-    topics:
-      notifications:
-        email: notification-service-to-message-delivery-service-mail
-        sms: notification-service-to-message-delivery-service-sms
 
   liquibase:
     change-log: classpath:/db/changelog/db.changelog-master.yaml
 
-springdoc:
-  api-docs:
-    path: /notification-service/api-docs
-    swagger-ui:
-      path: /swagger-ui.html
-      operations-sorter: method
+jwt:
+  secret: ${JWT_USER_SECRET}
 
 eureka:
   client:
@@ -41,8 +31,13 @@ eureka:
     fetchRegistry: true
     registerWithEureka: true
 
+springdoc:
+  api-docs:
+    path: /notification-service/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+
 services:
   template-service:
     url: http://localhost:8003
-  user-management-service:
-    url: http://localhost:8000

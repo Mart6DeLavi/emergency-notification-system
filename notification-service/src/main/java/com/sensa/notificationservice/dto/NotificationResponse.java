@@ -1,19 +1,21 @@
 package com.sensa.notificationservice.dto;
 
+import com.sensa.notificationservice.model.NotificationChannel;
 import com.sensa.notificationservice.model.NotificationStatus;
-import com.sensa.notificationservice.model.PreferredChannel;
 import lombok.Builder;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
-@Builder(toBuilder = true)
+@Builder
 public record NotificationResponse(
-        String clientUsername,
-        String senderEmail,
+        Long id,
+        UUID userId,
+        String templateName,
         String title,
         String content,
+        NotificationChannel channel,
         NotificationStatus status,
-        PreferredChannel preferredChannel,
         LocalDateTime createdAt,
-        String message) {
-}
+        LocalDateTime updatedAt
+) {}

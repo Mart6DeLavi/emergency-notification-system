@@ -1,6 +1,7 @@
 package com.sensa.notificationservice.exception;
 
 public class NotificationNotFoundException extends RuntimeException {
-    public NotificationNotFoundException(String format) {
+    public NotificationNotFoundException(String message) {
+        super(message);
     }
 }
