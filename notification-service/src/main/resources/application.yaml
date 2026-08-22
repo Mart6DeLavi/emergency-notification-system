@@ -17,12 +17,15 @@ spring:
 
   kafka:
     bootstrap-servers: localhost:9092
+    topics:
+      delivery: notification.delivery
 
   liquibase:
     change-log: classpath:/db/changelog/db.changelog-master.yaml
 
 jwt:
   secret: ${JWT_USER_SECRET}
+  lifetime: 86400000
 
 eureka:
   client:
@@ -41,3 +44,5 @@ springdoc:
 services:
   template-service:
     url: http://localhost:8003
+  user-data-management-service:
+    url: http://localhost:8000

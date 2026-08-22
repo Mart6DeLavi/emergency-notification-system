@@ -1,8 +1,12 @@
 package com.sensa.notificationservice.service;
 
+import com.sensa.notificationservice.client.TemplateServiceClient;
+import com.sensa.notificationservice.client.UserDataServiceClient;
 import com.sensa.notificationservice.dto.NotificationRequest;
 import com.sensa.notificationservice.dto.NotificationResponse;
+import com.sensa.notificationservice.dto.kafka.EmergencyConfirmedEvent;
 import com.sensa.notificationservice.dto.kafka.NotificationDeliveryEvent;
+import com.sensa.notificationservice.dto.kafka.UserLocationResponse;
 import com.sensa.notificationservice.entity.Notification;
 import com.sensa.notificationservice.exception.NotificationNotFoundException;
 import com.sensa.notificationservice.mapper.NotificationMapper;
@@ -15,10 +19,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -39,13 +44,15 @@ class NotificationServiceTest {
     private KafkaTemplate<String, NotificationDeliveryEvent> kafkaTemplate;
 
     @Mock
-    private RestTemplate restTemplate;
+    private TemplateServiceClient templateServiceClient;
+
+    @Mock
+    private UserDataServiceClient userDataServiceClient;
 
     @InjectMocks
     private NotificationService notificationService;
 
     private final UUID userId = UUID.randomUUID();
-    private final String jwtToken = "test-jwt";
 
     @Test
     void createNotification_Success() {
@@ -68,14 +75,6 @@ class NotificationServiceTest {
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        NotificationDeliveryEvent event = NotificationDeliveryEvent.builder()
-                .userId(userId)
-                .templateName("alert-template")
-                .title("Emergency Alert")
-                .content("Evacuation required")
-                .channel("push")
-                .build();
-
         NotificationResponse response = NotificationResponse.builder()
                 .id(1L)
                 .userId(userId)
@@ -90,52 +89,15 @@ class NotificationServiceTest {
 
         when(notificationMapper.toEntity(request, userId)).thenReturn(entity);
         when(notificationRepository.save(entity)).thenReturn(entity);
-        when(notificationMapper.toDeliveryEvent(entity)).thenReturn(event);
         when(notificationMapper.toResponse(entity)).thenReturn(response);
 
-        NotificationResponse result = notificationService.createNotification(request, userId, jwtToken);
+        NotificationResponse result = notificationService.createNotification(request, userId);
 
         assertNotNull(result);
         assertEquals("Emergency Alert", result.title());
         assertEquals(NotificationChannel.PUSH, result.channel());
-        verify(kafkaTemplate).send(eq("notification.push"), eq(event));
-    }
-
-    @Test
-    void createNotification_EmailChannel() {
-        NotificationRequest request = NotificationRequest.builder()
-                .templateName("welcome")
-                .title("Welcome")
-                .content("Hello!")
-                .channel(NotificationChannel.EMAIL)
-                .build();
-
-        Notification entity = Notification.builder()
-                .id(2L)
-                .userId(userId)
-                .templateName("welcome")
-                .title("Welcome")
-                .content("Hello!")
-                .channel(NotificationChannel.EMAIL)
-                .status(NotificationStatus.PENDING)
-                .build();
-
-        NotificationDeliveryEvent event = NotificationDeliveryEvent.builder()
-                .userId(userId)
-                .templateName("welcome")
-                .title("Welcome")
-                .content("Hello!")
-                .channel("email")
-                .build();
-
-        when(notificationMapper.toEntity(request, userId)).thenReturn(entity);
-        when(notificationRepository.save(entity)).thenReturn(entity);
-        when(notificationMapper.toDeliveryEvent(entity)).thenReturn(event);
-        when(notificationMapper.toResponse(entity)).thenReturn(mock(NotificationResponse.class));
-
-        notificationService.createNotification(request, userId, jwtToken);
-
-        verify(kafkaTemplate).send(eq("notification.email"), eq(event));
+        verify(notificationRepository).save(entity);
+        verify(kafkaTemplate, never()).send(anyString(), any());
     }
 
     @Test
@@ -196,5 +158,87 @@ class NotificationServiceTest {
 
         assertThrows(NotificationNotFoundException.class,
                 () -> notificationService.deleteNotification(99L, userId));
+    }
+
+    @Test
+    void handleEmergencyConfirmed_RendersAndBroadcasts() {
+        ReflectionTestUtils.setField(notificationService, "deliveryTopic", "notification.delivery");
+
+        EmergencyConfirmedEvent event = EmergencyConfirmedEvent.builder()
+                .emergencyId(100L)
+                .title("Fire alert")
+                .description("Big fire")
+                .city("Warsaw")
+                .street("Main St")
+                .templateName("emergency-alert")
+                .templateData(Map.of("city", "Warsaw", "street", "Main St"))
+                .build();
+
+        when(templateServiceClient.getTemplateContent("emergency-alert"))
+                .thenReturn("Alert in {{city}} on {{street}}");
+
+        UserLocationResponse recipient = UserLocationResponse.builder()
+                .userId(userId)
+                .email("user@example.com")
+                .phoneNumber("123456789")
+                .firstName("John")
+                .lastName("Doe")
+                .push(true)
+                .emailEnabled(true)
+                .sms(false)
+                .build();
+
+        when(userDataServiceClient.getRecipientsByLocation("Warsaw", "Main St"))
+                .thenReturn(List.of(recipient));
+
+        NotificationDeliveryEvent pushEvent = NotificationDeliveryEvent.builder()
+                .userId(userId)
+                .email("user@example.com")
+                .phoneNumber("123456789")
+                .channel("PUSH")
+                .title("Fire alert")
+                .content("Alert in Warsaw on Main St")
+                .build();
+        NotificationDeliveryEvent emailEvent = NotificationDeliveryEvent.builder()
+                .userId(userId)
+                .email("user@example.com")
+                .phoneNumber("123456789")
+                .channel("EMAIL")
+                .title("Fire alert")
+                .content("Alert in Warsaw on Main St")
+                .build();
+
+        when(notificationMapper.toDeliveryEvent(eq(recipient), eq("PUSH"), eq("Fire alert"), eq("Alert in Warsaw on Main St")))
+                .thenReturn(pushEvent);
+        when(notificationMapper.toDeliveryEvent(eq(recipient), eq("EMAIL"), eq("Fire alert"), eq("Alert in Warsaw on Main St")))
+                .thenReturn(emailEvent);
+
+        notificationService.handleEmergencyConfirmed(event);
+
+        verify(kafkaTemplate).send("notification.delivery", pushEvent);
+        verify(kafkaTemplate).send("notification.delivery", emailEvent);
+    }
+
+    @Test
+    void handleEmergencyConfirmed_NoRecipients_NoDelivery() {
+        ReflectionTestUtils.setField(notificationService, "deliveryTopic", "notification.delivery");
+
+        EmergencyConfirmedEvent event = EmergencyConfirmedEvent.builder()
+                .emergencyId(101L)
+                .title("Fire alert")
+                .city("Warsaw")
+                .street("Main St")
+                .templateName("emergency-alert")
+                .templateData(Map.of())
+                .build();
+
+        when(templateServiceClient.getTemplateContent("emergency-alert"))
+                .thenReturn("Alert");
+        when(userDataServiceClient.getRecipientsByLocation("Warsaw", "Main St"))
+                .thenReturn(List.of());
+
+        notificationService.handleEmergencyConfirmed(event);
+
+        verify(kafkaTemplate, never()).send(anyString(), any());
     }
 }

@@ -34,11 +34,9 @@ public class NotificationController {
     @PostMapping
     public ResponseEntity<NotificationResponse> createNotification(
             @AuthenticationPrincipal UUID userId,
-            @RequestHeader("Authorization") String authHeader,
             @RequestBody @Valid NotificationRequest request
     ) {
-        String jwtToken = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
-        NotificationResponse response = notificationService.createNotification(request, userId, jwtToken);
+        NotificationResponse response = notificationService.createNotification(request, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 

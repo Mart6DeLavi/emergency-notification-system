@@ -7,8 +7,9 @@ import java.util.UUID;
 @Builder
 public record NotificationDeliveryEvent(
         UUID userId,
-        String templateName,
+        String email,
+        String phoneNumber,
+        String channel,
         String title,
-        String content,
-        String channel
+        String content
 ) {}
