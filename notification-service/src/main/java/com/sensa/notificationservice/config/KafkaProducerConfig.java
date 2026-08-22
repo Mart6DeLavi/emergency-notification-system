@@ -1,6 +1,6 @@
 package com.sensa.notificationservice.config;
 
-import com.sensa.notificationservice.dto.kafka.NotificationKafkaDelivery;
+import com.sensa.notificationservice.dto.kafka.NotificationDeliveryEvent;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,21 +20,17 @@ public class KafkaProducerConfig {
     @Value("${spring.kafka.bootstrap-servers}")
     private String bootstrapServers;
 
-    public Map<String, Object> producerConfigs() {
+    @Bean
+    public ProducerFactory<String, NotificationDeliveryEvent> producerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-        return props;
+        return new DefaultKafkaProducerFactory<>(props);
     }
 
     @Bean
-    public ProducerFactory<String, NotificationKafkaDelivery> producerFactory() {
-        return new DefaultKafkaProducerFactory<>(producerConfigs());
-    }
-
-    @Bean
-    public KafkaTemplate<String, NotificationKafkaDelivery> kafkaTemplate() {
+    public KafkaTemplate<String, NotificationDeliveryEvent> kafkaTemplate() {
         return new KafkaTemplate<>(producerFactory());
     }
 }

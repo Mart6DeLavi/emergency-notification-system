@@ -2,47 +2,49 @@ package com.sensa.notificationservice.mapper;
 
 import com.sensa.notificationservice.dto.NotificationRequest;
 import com.sensa.notificationservice.dto.NotificationResponse;
+import com.sensa.notificationservice.dto.kafka.NotificationDeliveryEvent;
 import com.sensa.notificationservice.entity.Notification;
+import com.sensa.notificationservice.model.NotificationChannel;
+import com.sensa.notificationservice.model.NotificationStatus;
 import org.springframework.stereotype.Component;
+
+import java.util.UUID;
 
 @Component
 public class NotificationMapper {
-    public Notification mapToEntity(NotificationRequest notificationRequest) {
+
+    public Notification toEntity(NotificationRequest request, UUID userId) {
         return Notification.builder()
-                .clientUsername(notificationRequest.username())
-                .senderEmail(notificationRequest.senderEmail())
-                .title(notificationRequest.title())
-                .content(notificationRequest.content())
-                .preferredChannel(notificationRequest.preferredChannel())
+                .userId(userId)
+                .templateName(request.templateName())
+                .title(request.title())
+                .content(request.content())
+                .channel(request.channel())
+                .status(NotificationStatus.PENDING)
                 .build();
     }
 
-    public NotificationResponse mapToResponse(Notification notification) {
+    public NotificationResponse toResponse(Notification entity) {
         return NotificationResponse.builder()
-                .clientUsername(notification.getClientUsername())
-                .senderEmail(notification.getSenderEmail())
-                .title(notification.getTitle())
-                .content(notification.getContent())
-                .preferredChannel(notification.getPreferredChannel())
-                .createdAt(notification.getCreatedAt())
+                .id(entity.getId())
+                .userId(entity.getUserId())
+                .templateName(entity.getTemplateName())
+                .title(entity.getTitle())
+                .content(entity.getContent())
+                .channel(entity.getChannel())
+                .status(entity.getStatus())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
                 .build();
     }
 
-    public NotificationResponse mapToResponse(NotificationRequest notificationRequest) {
-        return NotificationResponse.builder()
-                .clientUsername(notificationRequest.username())
-                .senderEmail(notificationRequest.senderEmail())
-                .title(notificationRequest.title())
-                .content(notificationRequest.content())
-                .status(notificationRequest.status())
-                .preferredChannel(notificationRequest.preferredChannel())
+    public NotificationDeliveryEvent toDeliveryEvent(Notification entity) {
+        return NotificationDeliveryEvent.builder()
+                .userId(entity.getUserId())
+                .templateName(entity.getTemplateName())
+                .title(entity.getTitle())
+                .content(entity.getContent())
+                .channel(entity.getChannel().name().toLowerCase())
                 .build();
-    }
-
-    public Notification update(NotificationRequest notificationRequest, Notification notification) {
-        notification.setClientUsername(notificationRequest.username());
-        notification.setTitle(notificationRequest.title());
-        notification.setContent(notification.getContent());
-        return notification;
     }
 }

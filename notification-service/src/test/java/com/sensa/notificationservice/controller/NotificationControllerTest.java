@@ -1,158 +1,156 @@
 package com.sensa.notificationservice.controller;
 
-import com.sensa.notificationservice.dto.client.ClientResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sensa.notificationservice.dto.NotificationRequest;
 import com.sensa.notificationservice.dto.NotificationResponse;
-import com.sensa.notificationservice.dto.template.TemplateResponse;
+import com.sensa.notificationservice.model.NotificationChannel;
 import com.sensa.notificationservice.model.NotificationStatus;
-import com.sensa.notificationservice.model.PreferredChannel;
-import com.sensa.notificationservice.model.PreferredCommunicationChannel;
-import com.sensa.notificationservice.client.TemplateClient;
-import com.sensa.notificationservice.client.UserManagementClient;
-import com.sensa.notificationservice.mapper.NotificationMapper;
-import com.sensa.notificationservice.repository.NotificationRepository;
-import com.sensa.notificationservice.service.KafkaProducerService;
 import com.sensa.notificationservice.service.NotificationService;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 
-import static org.junit.jupiter.api.Assertions.*;
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
+
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@SpringBootTest
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
+class NotificationControllerTest {
 
-@ExtendWith(MockitoExtension.class)
-class NotificationServiceTest {
+    @Autowired
+    private MockMvc mockMvc;
 
-    @Mock
-    private KafkaTemplate<String, Object> kafkaTemplate;
-    @Mock
-    private NotificationRepository notificationRepository;
-    @Mock
-    private TemplateClient templateClient;
-    @Mock
-    private UserManagementClient userManagementClient;
-    @Mock
-    private NotificationMapper notificationMapper;
-    @Mock
-    private KafkaProducerService kafkaProducerService;
-    @InjectMocks
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @MockitoBean
     private NotificationService notificationService;
 
-    @Test
-    void testCreateNotification_TemplateExists_Email() {
-        NotificationRequest request = NotificationRequest.builder()
-                .username("user1")
-                .senderEmail("sender@example.com")
-                .title("Test Title")
-                .content("Test Content")
-                .status(NotificationStatus.NEW)
-                .preferredChannel(PreferredChannel.EMAIL)
-                .build();
+    private final UUID userId = UUID.randomUUID();
+    private String jwtToken;
 
-        TemplateResponse templateResponse = TemplateResponse.builder()
-                .clientUsername("user1")
-                .title("Test Title")
-                .content("Some content")
-                .build();
-        when(templateClient.findTemplate(eq("user1"), eq("Test Title")))
-                .thenReturn(ResponseEntity.status(HttpStatus.OK).body(templateResponse));
-
-        ClientResponse client = ClientResponse.builder()
-                .id(1L)
-                .username("user1")
-                .email("user1@example.com")
-                .phoneNumber("1234567890")
-                .preferredCommunicationChannel(PreferredCommunicationChannel.EMAIL)
-                .build();
-        when(userManagementClient.getClientByUsername("user1"))
-                .thenReturn(ResponseEntity.ok(client));
-
-        NotificationResponse expectedResponse = NotificationResponse.builder()
-                .clientUsername("user1")
-                .senderEmail("sender@example.com")
-                .title("Test Title")
-                .content("Test Content")
-                .status(NotificationStatus.NEW)
-                .preferredChannel(PreferredChannel.EMAIL)
-                .createdAt(null)
-                .message("Notification created")
-                .build();
-        when(notificationMapper.mapToResponse(request)).thenReturn(expectedResponse);
-
-        NotificationResponse response = notificationService.createNotification(request);
-        assertEquals(expectedResponse, response);
-        verify(kafkaProducerService).sendEmailTopic(request);
+    @BeforeEach
+    void setUp() {
+        SecretKey key = Keys.hmacShaKeyFor("test-secret-key-for-notification-service-testing-256-bits-long"
+                .getBytes(StandardCharsets.UTF_8));
+        jwtToken = Jwts.builder()
+                .subject("test@example.com")
+                .claim("userId", userId.toString())
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 3600000))
+                .signWith(key)
+                .compact();
     }
 
     @Test
-    void testCreateNotification_TemplateNotExists_SMS() {
+    void createNotification_ShouldReturn201() throws Exception {
         NotificationRequest request = NotificationRequest.builder()
-                .username("user1")
-                .senderEmail("sender@example.com")
-                .title("Promo")
-                .content("Discount available!")
-                .status(NotificationStatus.NEW)
-                .preferredChannel(PreferredChannel.PHONE)
+                .templateName("alert")
+                .title("Alert")
+                .content("Test content")
+                .channel(NotificationChannel.PUSH)
                 .build();
 
-        when(templateClient.findTemplate(eq("user1"), eq("Promo")))
-                .thenReturn(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
-        TemplateResponse createdTemplate = TemplateResponse.builder()
-                .clientUsername("user1")
-                .title("Promo")
-                .content("Discount available!")
-                .build();
-        when(templateClient.createTemplate(eq("user1"), any())).thenReturn(ResponseEntity.ok(createdTemplate));
-
-        ClientResponse client = ClientResponse.builder()
+        NotificationResponse response = NotificationResponse.builder()
                 .id(1L)
-                .username("user1")
-                .email("user1@example.com")
-                .phoneNumber("1234567890")
-                .preferredCommunicationChannel(PreferredCommunicationChannel.SMS)
+                .userId(userId)
+                .templateName("alert")
+                .title("Alert")
+                .content("Test content")
+                .channel(NotificationChannel.PUSH)
+                .status(NotificationStatus.PENDING)
+                .createdAt(LocalDateTime.now())
                 .build();
-        when(userManagementClient.getClientByUsername("user1")).thenReturn(ResponseEntity.ok(client));
 
-        NotificationResponse expectedResponse = NotificationResponse.builder()
-                .clientUsername("user1")
-                .senderEmail("sender@example.com")
-                .title("Promo")
-                .content("Discount available!")
-                .status(NotificationStatus.NEW)
-                .preferredChannel(PreferredChannel.PHONE)
-                .createdAt(null)
-                .message("Notification created")
-                .build();
-        when(notificationMapper.mapToResponse(request)).thenReturn(expectedResponse);
+        when(notificationService.createNotification(any(), any(), anyString())).thenReturn(response);
 
-        NotificationResponse response = notificationService.createNotification(request);
-        assertEquals(expectedResponse, response);
-        verify(kafkaProducerService).sendSmsTopic(request);
+        mockMvc.perform(post("/api/v1/notifications")
+                        .header("Authorization", "Bearer " + jwtToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.title").value("Alert"));
     }
 
     @Test
-    void testSetStatus() {
+    void createNotification_InvalidBody_ShouldReturn400() throws Exception {
         NotificationRequest request = NotificationRequest.builder()
-                .username("user1")
-                .senderEmail("sender@example.com")
-                .title("Status Update")
-                .content("Updated Content")
-                .status(NotificationStatus.NEW)
-                .preferredChannel(PreferredChannel.EMAIL)
+                .templateName("")
+                .title("")
+                .content("")
+                .channel(null)
                 .build();
 
-        NotificationResponse response = notificationService.setStatus(request, NotificationStatus.SENT);
-        assertEquals("user1", response.clientUsername());
-        assertEquals("sender@example.com", response.senderEmail());
-        assertEquals("Status Update", response.title());
-        assertEquals("Updated Content", response.content());
-        assertEquals(NotificationStatus.SENT, response.status());
+        mockMvc.perform(post("/api/v1/notifications")
+                        .header("Authorization", "Bearer " + jwtToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getMyNotifications_ShouldReturn200() throws Exception {
+        NotificationResponse response = NotificationResponse.builder()
+                .id(1L)
+                .userId(userId)
+                .templateName("alert")
+                .title("Alert")
+                .content("Content")
+                .channel(NotificationChannel.EMAIL)
+                .status(NotificationStatus.PENDING)
+                .build();
+
+        when(notificationService.getMyNotifications(any())).thenReturn(List.of(response));
+
+        mockMvc.perform(get("/api/v1/notifications")
+                        .header("Authorization", "Bearer " + jwtToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].title").value("Alert"));
+    }
+
+    @Test
+    void getNotification_ShouldReturn200() throws Exception {
+        NotificationResponse response = NotificationResponse.builder()
+                .id(1L)
+                .userId(userId)
+                .templateName("alert")
+                .title("Alert")
+                .content("Content")
+                .channel(NotificationChannel.EMAIL)
+                .status(NotificationStatus.PENDING)
+                .build();
+
+        when(notificationService.getNotification(eq(1L), any())).thenReturn(response);
+
+        mockMvc.perform(get("/api/v1/notifications/1")
+                        .header("Authorization", "Bearer " + jwtToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1));
+    }
+
+    @Test
+    void deleteNotification_ShouldReturn204() throws Exception {
+        mockMvc.perform(delete("/api/v1/notifications/1")
+                        .header("Authorization", "Bearer " + jwtToken))
+                .andExpect(status().isNoContent());
     }
 }

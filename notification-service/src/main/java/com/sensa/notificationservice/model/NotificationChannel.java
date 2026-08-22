@@ -1,8 +1,7 @@
 package com.sensa.notificationservice.model;
 
-
-public enum PreferredCommunicationChannel {
+public enum NotificationChannel {
     EMAIL,
-    PHONECALL,
+    PUSH,
     SMS
 }
