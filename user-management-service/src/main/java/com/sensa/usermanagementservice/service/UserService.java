@@ -9,6 +9,7 @@ import com.sensa.usermanagementservice.data.repository.UserLocationDataRepositor
 import com.sensa.usermanagementservice.data.repository.UserMainDataRepository;
 import com.sensa.usermanagementservice.data.repository.UserNotificationSettingsRepository;
 import com.sensa.usermanagementservice.dto.UserCreateEvent;
+import com.sensa.usermanagementservice.dto.UserLocationResponse;
 import com.sensa.usermanagementservice.dto.UserResponse;
 import com.sensa.usermanagementservice.dto.UserUpdateRequest;
 import com.sensa.usermanagementservice.exception.UserNotFoundException;
@@ -16,6 +17,7 @@ import com.sensa.usermanagementservice.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
@@ -142,6 +144,14 @@ public class UserService {
     private Mono<UserEntity> updateUserTimestamp(UserEntity entity) {
         entity.setUpdatedAt(LocalDateTime.now());
         return userEntityRepository.save(entity);
+    }
+
+    public Flux<UserLocationResponse> findUsersByLocation(String city, String street) {
+        log.info("Fetching users by location: city={}, street={}", city, street);
+        if (street == null || street.isBlank()) {
+            return userLocationDataRepository.findUsersByCity(city);
+        }
+        return userLocationDataRepository.findUsersByCityAndStreet(city, street);
     }
 
     public Mono<Void> delete(UUID userId) {

@@ -1,5 +1,6 @@
 package com.sensa.usermanagementservice.controller;
 
+import com.sensa.usermanagementservice.dto.UserLocationResponse;
 import com.sensa.usermanagementservice.dto.UserResponse;
 import com.sensa.usermanagementservice.dto.UserUpdateRequest;
 import com.sensa.usermanagementservice.exception.UserNotFoundException;
@@ -11,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.UUID;
@@ -34,6 +36,17 @@ public class UserController {
                 .map(ResponseEntity::ok)
                 .onErrorResume(UserNotFoundException.class,
                         e -> Mono.just(ResponseEntity.notFound().build()));
+    }
+
+    @Operation(summary = "Get users by location", description = "Returns users in a given city (and optionally street) for broadcast targeting")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "List of users in the zone")
+    })
+    @GetMapping("/location")
+    public Flux<UserLocationResponse> getUsersByLocation(
+            @RequestParam String city,
+            @RequestParam(required = false) String street) {
+        return userService.findUsersByLocation(city, street);
     }
 
     @Operation(summary = "Update user", description = "Updates user data by userId")
