@@ -1,15 +1,16 @@
-CREATE TABLE template (
+DROP TABLE IF EXISTS username_template CASCADE;
+DROP TABLE IF EXISTS template CASCADE;
+
+CREATE TABLE IF NOT EXISTS templates (
     id BIGSERIAL PRIMARY KEY,
-    client_username VARCHAR(255) NOT NULL,
-    title VARCHAR(255) NOT NULL,
-    content TEXT,
-    CONSTRAINT template_unique_clientUsername_title UNIQUE (client_username, title)
+    template_name VARCHAR(255) NOT NULL UNIQUE,
+    description VARCHAR(500),
+    channel VARCHAR(10) NOT NULL CHECK (channel IN ('EMAIL', 'PUSH', 'SMS')),
+    content TEXT NOT NULL,
+    created_by UUID NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE username_template (
-    id BIGSERIAL PRIMARY KEY,
-    template_id BIGINT NOT NULL,
-    username VARCHAR(255) NOT NULL,
-    CONSTRAINT username_unique UNIQUE (username),
-    CONSTRAINT fk_template_id FOREIGN KEY (template_id) REFERENCES template (id) ON DELETE CASCADE
-);
+CREATE INDEX idx_templates_channel ON templates(channel);
+CREATE INDEX idx_templates_created_by ON templates(created_by);
