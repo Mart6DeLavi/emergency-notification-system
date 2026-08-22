@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  emergency-situation-request-service:
+    build: .
+    image: emergency-situation-request-service:latest
+    container_name: emergency-situation-request-service
+    ports:
+      - "8006:8006"
+    environment:
+      DATABASE_URL: postgres://postgres:28859013@postgres:5432/Sensa_Emergency_Service
+      KAFKA_BROKERS: kafka:9092
+      JWT_SECRET: change-me
+      SERVER_PORT: "8006"
+      RUST_LOG: emergency_situation_request_service=info
+    depends_on:
+      - postgres
+      - kafka
+    networks:
+      - sensa-network
+
+  postgres:
+    image: postgres:15.2
+    container_name: emergency-postgres
+    environment:
+      POSTGRES_DB: Sensa_Emergency_Service
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 28859013
+    ports:
+      - "5435:5432"
+    networks:
+      - sensa-network
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: emergency-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2183:2181"
+    networks:
+      - sensa-network
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: emergency-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9094:9092"
+    environment:
+      KAFKA_BROKER_ID: 3
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - sensa-network
+
+networks:
+  sensa-network:
+    driver: bridge
