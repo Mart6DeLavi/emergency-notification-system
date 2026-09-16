@@ -17,8 +17,14 @@ spring:
 
   kafka:
     bootstrap-servers: localhost:9092
-    topics:
-      delivery: notification.delivery
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    template:
+      exchange: notification.exchange
 
   liquibase:
     change-log: classpath:/db/changelog/db.changelog-master.yaml

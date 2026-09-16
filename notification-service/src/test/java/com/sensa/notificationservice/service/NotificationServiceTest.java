@@ -2,6 +2,7 @@ package com.sensa.notificationservice.service;
 
 import com.sensa.notificationservice.client.TemplateServiceClient;
 import com.sensa.notificationservice.client.UserDataServiceClient;
+import com.sensa.notificationservice.config.RabbitMQConfig;
 import com.sensa.notificationservice.dto.NotificationRequest;
 import com.sensa.notificationservice.dto.NotificationResponse;
 import com.sensa.notificationservice.dto.kafka.EmergencyConfirmedEvent;
@@ -18,8 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -41,7 +41,7 @@ class NotificationServiceTest {
     private NotificationMapper notificationMapper;
 
     @Mock
-    private KafkaTemplate<String, NotificationDeliveryEvent> kafkaTemplate;
+    private RabbitTemplate rabbitTemplate;
 
     @Mock
     private TemplateServiceClient templateServiceClient;
@@ -97,7 +97,7 @@ class NotificationServiceTest {
         assertEquals("Emergency Alert", result.title());
         assertEquals(NotificationChannel.PUSH, result.channel());
         verify(notificationRepository).save(entity);
-        verify(kafkaTemplate, never()).send(anyString(), any());
+        verify(rabbitTemplate, never()).convertAndSend(anyString(), any(), any(Object.class));
     }
 
     @Test
@@ -162,8 +162,6 @@ class NotificationServiceTest {
 
     @Test
     void handleEmergencyConfirmed_RendersAndBroadcasts() {
-        ReflectionTestUtils.setField(notificationService, "deliveryTopic", "notification.delivery");
-
         EmergencyConfirmedEvent event = EmergencyConfirmedEvent.builder()
                 .emergencyId(100L)
                 .title("Fire alert")
@@ -181,6 +179,7 @@ class NotificationServiceTest {
                 .userId(userId)
                 .email("user@example.com")
                 .phoneNumber("123456789")
+                .deviceToken("fcm-token")
                 .firstName("John")
                 .lastName("Doe")
                 .push(true)
@@ -195,6 +194,7 @@ class NotificationServiceTest {
                 .userId(userId)
                 .email("user@example.com")
                 .phoneNumber("123456789")
+                .deviceToken("fcm-token")
                 .channel("PUSH")
                 .title("Fire alert")
                 .content("Alert in Warsaw on Main St")
@@ -203,6 +203,7 @@ class NotificationServiceTest {
                 .userId(userId)
                 .email("user@example.com")
                 .phoneNumber("123456789")
+                .deviceToken("fcm-token")
                 .channel("EMAIL")
                 .title("Fire alert")
                 .content("Alert in Warsaw on Main St")
@@ -215,14 +216,12 @@ class NotificationServiceTest {
 
         notificationService.handleEmergencyConfirmed(event);
 
-        verify(kafkaTemplate).send("notification.delivery", pushEvent);
-        verify(kafkaTemplate).send("notification.delivery", emailEvent);
+        verify(rabbitTemplate).convertAndSend(RabbitMQConfig.DELIVERY_QUEUE, pushEvent);
+        verify(rabbitTemplate).convertAndSend(RabbitMQConfig.DELIVERY_QUEUE, emailEvent);
     }
 
     @Test
     void handleEmergencyConfirmed_NoRecipients_NoDelivery() {
-        ReflectionTestUtils.setField(notificationService, "deliveryTopic", "notification.delivery");
-
         EmergencyConfirmedEvent event = EmergencyConfirmedEvent.builder()
                 .emergencyId(101L)
                 .title("Fire alert")
@@ -239,6 +238,6 @@ class NotificationServiceTest {
 
         notificationService.handleEmergencyConfirmed(event);
 
-        verify(kafkaTemplate, never()).send(anyString(), any());
+        verify(rabbitTemplate, never()).convertAndSend(anyString(), any(), any(Object.class));
     }
 }

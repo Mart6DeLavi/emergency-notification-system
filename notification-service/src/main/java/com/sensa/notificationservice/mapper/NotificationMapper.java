@@ -43,6 +43,7 @@ public class NotificationMapper {
                 .userId(recipient.userId())
                 .email(recipient.email())
                 .phoneNumber(recipient.phoneNumber())
+                .deviceToken(recipient.deviceToken())
                 .channel(channel)
                 .title(title)
                 .content(content)
