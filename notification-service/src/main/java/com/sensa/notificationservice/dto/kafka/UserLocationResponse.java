@@ -10,6 +10,7 @@ public record UserLocationResponse(
         @JsonProperty("userId") UUID userId,
         @JsonProperty("email") String email,
         @JsonProperty("phoneNumber") String phoneNumber,
+        @JsonProperty("deviceToken") String deviceToken,
         @JsonProperty("firstName") String firstName,
         @JsonProperty("lastName") String lastName,
         @JsonProperty("push") boolean push,

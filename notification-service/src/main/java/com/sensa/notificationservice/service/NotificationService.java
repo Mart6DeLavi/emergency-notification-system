@@ -2,6 +2,7 @@ package com.sensa.notificationservice.service;
 
 import com.sensa.notificationservice.client.TemplateServiceClient;
 import com.sensa.notificationservice.client.UserDataServiceClient;
+import com.sensa.notificationservice.config.RabbitMQConfig;
 import com.sensa.notificationservice.dto.NotificationRequest;
 import com.sensa.notificationservice.dto.NotificationResponse;
 import com.sensa.notificationservice.dto.kafka.EmergencyConfirmedEvent;
@@ -13,8 +14,7 @@ import com.sensa.notificationservice.mapper.NotificationMapper;
 import com.sensa.notificationservice.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,12 +29,9 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final NotificationMapper notificationMapper;
-    private final KafkaTemplate<String, NotificationDeliveryEvent> kafkaTemplate;
+    private final RabbitTemplate rabbitTemplate;
     private final TemplateServiceClient templateServiceClient;
     private final UserDataServiceClient userDataServiceClient;
-
-    @Value("${spring.kafka.topics.delivery}")
-    private String deliveryTopic;
 
     @Transactional
     public NotificationResponse createNotification(NotificationRequest request, UUID userId) {
@@ -96,8 +93,8 @@ public class NotificationService {
 
     private void sendDelivery(UserLocationResponse recipient, String channel, String title, String content) {
         NotificationDeliveryEvent event = notificationMapper.toDeliveryEvent(recipient, channel, title, content);
-        kafkaTemplate.send(deliveryTopic, event);
-        log.info("Sent {} delivery for userId={} to topic {}", channel, recipient.userId(), deliveryTopic);
+        rabbitTemplate.convertAndSend(RabbitMQConfig.DELIVERY_QUEUE, event);
+        log.info("Sent {} delivery for userId={} to queue {}", channel, recipient.userId(), RabbitMQConfig.DELIVERY_QUEUE);
     }
 
     private String render(String template, Map<String, String> data) {

@@ -18,8 +18,14 @@ spring:
 
   kafka:
     bootstrap-servers: localhost:9092
-    topics:
-      delivery: notification.delivery
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    template:
+      exchange: notification.exchange
 
   cloud:
     discovery:
