@@ -7,6 +7,7 @@ pub struct DeliveryEvent {
     pub user_id: Uuid,
     pub email: Option<String>,
     pub phone_number: Option<String>,
+    pub device_token: Option<String>,
     pub channel: String,
     pub title: String,
     pub content: String,
@@ -50,6 +51,7 @@ mod tests {
             "userId": "123e4567-e89b-12d3-a456-426614174000",
             "email": "user@example.com",
             "phoneNumber": "+48123456789",
+            "deviceToken": "fcm-token-abc",
             "channel": "PUSH",
             "title": "Emergency alert",
             "content": "Fire in the building<br>"
@@ -63,6 +65,7 @@ mod tests {
         );
         assert_eq!(event.email.as_deref(), Some("user@example.com"));
         assert_eq!(event.phone_number.as_deref(), Some("+48123456789"));
+        assert_eq!(event.device_token.as_deref(), Some("fcm-token-abc"));
         assert_eq!(event.channel, "PUSH");
         assert_eq!(event.title, "Emergency alert");
         assert_eq!(event.content, "Fire in the building<br>");
@@ -74,6 +77,7 @@ mod tests {
             "userId": "123e4567-e89b-12d3-a456-426614174000",
             "email": null,
             "phoneNumber": null,
+            "deviceToken": null,
             "channel": "SMS",
             "title": "Alert",
             "content": "Test"
@@ -83,6 +87,7 @@ mod tests {
 
         assert!(event.email.is_none());
         assert!(event.phone_number.is_none());
+        assert!(event.device_token.is_none());
         assert_eq!(Channel::from_str(&event.channel), Some(Channel::Sms));
     }
 }

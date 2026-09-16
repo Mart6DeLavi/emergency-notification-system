@@ -16,9 +16,7 @@ async fn main() {
     let config = Config::from_env();
     tracing::info!("Starting message-delivery-service");
 
-    let consumer = consumer::create_consumer(&config);
-
-    let consumer_task = tokio::spawn(consumer::run(consumer));
+    let consumer_task = tokio::spawn(consumer::run(config.clone()));
     let health_task = tokio::spawn(http::start_health_server(config.server_port));
 
     tokio::select! {
