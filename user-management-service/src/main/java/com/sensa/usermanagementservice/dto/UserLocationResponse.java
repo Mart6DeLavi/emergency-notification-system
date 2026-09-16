@@ -8,6 +8,7 @@ public interface UserLocationResponse {
     String getPhoneNumber();
     String getFirstName();
     String getLastName();
+    String getDeviceToken();
     boolean getPush();
     boolean getEmailEnabled();
     boolean getSms();

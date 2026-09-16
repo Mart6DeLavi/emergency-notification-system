@@ -21,6 +21,7 @@ public class UserMapper {
                 .lastName(mainData.getLastName())
                 .email(mainData.getEmail())
                 .phoneNumber(mainData.getPhoneNumber())
+                .deviceToken(mainData.getDeviceToken())
                 .country(location.getCountry())
                 .city(location.getCity())
                 .street(location.getStreet())

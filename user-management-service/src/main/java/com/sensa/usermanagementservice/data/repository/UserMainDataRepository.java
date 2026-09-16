@@ -9,7 +9,7 @@ import reactor.core.publisher.Mono;
 @Repository
 public interface UserMainDataRepository extends ReactiveCrudRepository<UserMainDataEntity, Long> {
 
-    @Query("SELECT user_entity_id, first_name, last_name, email, phone_number, created_at, updated_at FROM user_main_data WHERE user_entity_id = :userEntityId")
+    @Query("SELECT user_entity_id, first_name, last_name, email, phone_number, device_token, created_at, updated_at FROM user_main_data WHERE user_entity_id = :userEntityId")
     Mono<UserMainDataEntity> findByUserEntityId(Long userEntityId);
 
     @Query("DELETE FROM user_main_data WHERE user_entity_id = :userEntityId")

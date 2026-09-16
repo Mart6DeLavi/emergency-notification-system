@@ -25,6 +25,8 @@ public class UserMainDataEntity {
 
     private String phoneNumber;
 
+    private String deviceToken;
+
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 

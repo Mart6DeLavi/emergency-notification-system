@@ -12,6 +12,7 @@ public record UserResponse(
     String lastName,
     String email,
     String phoneNumber,
+    String deviceToken,
     String country,
     String city,
     String street,

@@ -110,6 +110,7 @@ public class UserService {
                     if (request.lastName() != null) existing.setLastName(request.lastName());
                     if (request.email() != null) existing.setEmail(request.email());
                     if (request.phoneNumber() != null) existing.setPhoneNumber(request.phoneNumber());
+                    if (request.deviceToken() != null) existing.setDeviceToken(request.deviceToken());
                     existing.setUpdatedAt(LocalDateTime.now());
                     return userMainDataRepository.save(existing);
                 });
