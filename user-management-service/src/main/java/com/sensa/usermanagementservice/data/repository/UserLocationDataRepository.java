@@ -23,6 +23,7 @@ public interface UserLocationDataRepository extends ReactiveCrudRepository<UserL
                    m.phone_number AS phone_number,
                    m.first_name AS first_name,
                    m.last_name AS last_name,
+                   m.device_token AS device_token,
                    n.push AS push,
                    n.email_enabled AS email_enabled,
                    n.sms AS sms
@@ -41,6 +42,7 @@ public interface UserLocationDataRepository extends ReactiveCrudRepository<UserL
                    m.phone_number AS phone_number,
                    m.first_name AS first_name,
                    m.last_name AS last_name,
+                   m.device_token AS device_token,
                    n.push AS push,
                    n.email_enabled AS email_enabled,
                    n.sms AS sms
