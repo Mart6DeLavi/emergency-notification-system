@@ -3,7 +3,7 @@ rootProject.name = 'SENSA'
 include("api-gateway")
 include("authentication-service")
 include("discovery-server")
-include("message-delivery-service")
+include("filesystem-service")
 include("notification-service")
 include("template-service")
 include("user-management-service")
