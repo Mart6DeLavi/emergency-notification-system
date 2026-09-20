@@ -1,0 +1,71 @@
+server:
+  port: 8002
+
+spring:
+  application:
+    name: filesystem-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/Sensa_File_System_Service
+    username: ${POSTGRES_USERNAME}
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  liquibase:
+    change-log: classpath:/db/changelog/db.changelog-master.yaml
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    topics:
+      file-moderated: file.moderated
+
+  servlet:
+    multipart:
+      max-file-size: 256MB
+      max-request-size: 512MB
+
+jwt:
+  secret: ${JWT_USER_SECRET}
+
+aws:
+  access-key-id: ${AWS_ACCESS_KEY_ID:}
+  secret-access-key: ${AWS_SECRET_ACCESS_KEY:}
+  region: ${AWS_REGION:eu-west-1}
+  s3:
+    bucket: ${S3_BUCKET}
+
+nsfw:
+  enabled: true
+  local:
+    enabled: true
+  model:
+    path: models/nsfw-detection-model.onnx
+    input-size: 224
+  threshold: 0.5
+
+video:
+  max-duration-seconds: 30
+  nsfw:
+    frame-interval-seconds: 2
+    max-frames: 10
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+    fetchRegistry: true
+    registerWithEureka: true
+
+springdoc:
+  api-docs:
+    path: /filesystem-service/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
