@@ -21,11 +21,18 @@ pub struct AppState {
 pub struct CreateEmergencyRequest {
     pub title: String,
     pub description: Option<String>,
-    pub files: Option<serde_json::Value>,
+    pub files: Option<Vec<FileRef>>,
     pub country: Option<String>,
     pub city: Option<String>,
     pub street: Option<String>,
     pub alarm_timestamp: Option<chrono::DateTime<chrono::Utc>>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FileRef {
+    pub file_id: i64,
+    pub url: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -85,13 +92,17 @@ pub async fn create_emergency(
 ) -> Result<(axum::http::StatusCode, Json<EmergencyResponse>), AppError> {
     let user_id = auth_user_id(&headers, &state.config)?;
 
+    let files_json = req.files.map(|files| {
+        serde_json::to_value(files).unwrap_or(serde_json::Value::Null)
+    });
+
     let emergency = state
         .repository
         .create(
             user_id,
             &req.title,
             req.description.as_deref(),
-            req.files,
+            files_json,
             req.country.as_deref(),
             req.city.as_deref(),
             req.street.as_deref(),
