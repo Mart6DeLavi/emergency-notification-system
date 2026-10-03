@@ -10,4 +10,6 @@ interface FileRepository : JpaRepository<FileEntity, Long> {
     fun findByIdAndUserId(id: Long, userId: java.util.UUID): FileEntity?
 
     fun deleteByIdAndUserId(id: Long, userId: java.util.UUID): Int
+
+    fun findAllByIdInAndUserId(ids: List<Long>, userId: java.util.UUID): List<FileEntity>
 }

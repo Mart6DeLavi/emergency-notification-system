@@ -1,7 +1,7 @@
 CREATE TABLE files (
     id BIGSERIAL PRIMARY KEY,
     user_id UUID NOT NULL,
-    url VARCHAR(1024) NOT NULL,
+    url VARCHAR(1024),
     filename VARCHAR(512) NOT NULL,
     emergency_situation_id BIGINT,
     moderation_status VARCHAR(32) NOT NULL DEFAULT 'PENDING',

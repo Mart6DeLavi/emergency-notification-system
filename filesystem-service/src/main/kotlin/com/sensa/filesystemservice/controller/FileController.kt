@@ -1,6 +1,8 @@
 package com.sensa.filesystemservice.controller
 
+import com.sensa.filesystemservice.dto.FileLinkRequest
 import com.sensa.filesystemservice.dto.FileResponse
+import com.sensa.filesystemservice.dto.FileUploadResult
 import com.sensa.filesystemservice.service.FileService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -10,10 +12,11 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RequestPart
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.multipart.MultipartFile
@@ -25,21 +28,33 @@ class FileController(
     private val fileService: FileService
 ) {
 
-    @Operation(summary = "Upload a file", description = "Uploads a file to S3 and runs NSFW moderation")
+    @Operation(summary = "Upload files", description = "Uploads files to S3 and runs NSFW moderation per file")
     @ApiResponses(
-        ApiResponse(responseCode = "201", description = "File uploaded and approved"),
-        ApiResponse(responseCode = "400", description = "Unsupported type or NSFW content"),
+        ApiResponse(responseCode = "201", description = "Files processed (approved or rejected)"),
+        ApiResponse(responseCode = "400", description = "Unsupported file type"),
         ApiResponse(responseCode = "401", description = "Unauthorized"),
         ApiResponse(responseCode = "500", description = "Server error")
     )
     @PostMapping
     fun upload(
         @AuthenticationPrincipal userId: UUID,
-        @RequestPart("file") file: MultipartFile,
-        @RequestParam(name = "emergencySituationId", required = false) emergencySituationId: Long?
-    ): ResponseEntity<FileResponse> {
+        @RequestPart("files") files: List<MultipartFile>
+    ): ResponseEntity<List<FileUploadResult>> {
         return ResponseEntity.status(HttpStatus.CREATED)
-            .body(fileService.upload(file, userId, emergencySituationId))
+            .body(fileService.uploadFiles(files, userId))
+    }
+
+    @Operation(summary = "Link files to emergency", description = "Sets emergency_situation_id on a list of files")
+    @ApiResponses(
+        ApiResponse(responseCode = "200", description = "Files linked"),
+        ApiResponse(responseCode = "404", description = "One or more files not found")
+    )
+    @PatchMapping("/link")
+    fun linkFiles(
+        @AuthenticationPrincipal userId: UUID,
+        @RequestBody request: FileLinkRequest
+    ): ResponseEntity<List<FileResponse>> {
+        return ResponseEntity.ok(fileService.linkFiles(request, userId))
     }
 
     @Operation(summary = "Get file metadata", description = "Returns file metadata by id")

@@ -7,7 +7,7 @@ import java.util.UUID
 data class FileResponse(
     val id: Long,
     val userId: UUID,
-    val url: String,
+    val url: String?,
     val filename: String,
     val emergencySituationId: Long?,
     val moderationStatus: ModerationStatus,

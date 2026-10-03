@@ -28,8 +28,7 @@ class NsfwModerationService(
         val duration = videoUtils.probeDuration(videoPath)
         log.info("Video duration: {} seconds", duration)
 
-        val framesDir = tempDir.resolve("frames")
-        val frames = videoFrameExtractor.extractFrames(videoPath, framesDir)
+        val frames = videoFrameExtractor.extractFrames(videoPath, tempDir)
         log.info("Extracted {} frames for moderation", frames.size)
 
         for (frame in frames) {

@@ -1,11 +1,13 @@
 package com.sensa.filesystemservice.service
 
+import com.sensa.filesystemservice.dto.FileLinkRequest
 import com.sensa.filesystemservice.dto.FileModeratedEvent
 import com.sensa.filesystemservice.dto.FileResponse
+import com.sensa.filesystemservice.dto.FileUploadResult
 import com.sensa.filesystemservice.entity.FileEntity
 import com.sensa.filesystemservice.entity.ModerationStatus
-import com.sensa.filesystemservice.exception.NsfwContentException
 import com.sensa.filesystemservice.mapper.FileMapper
+import com.sensa.filesystemservice.moderation.NsfwDetectionResult
 import com.sensa.filesystemservice.repository.FileRepository
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -41,56 +43,119 @@ class FileService(
     @Value("\${spring.kafka.topics.file-moderated:file.moderated}")
     private lateinit var fileModeratedTopic: String
 
-    @Transactional
-    fun upload(file: MultipartFile, userId: UUID, emergencySituationId: Long?): FileResponse {
-        log.info("Uploading file: filename={}, userId={}", file.originalFilename, userId)
+    fun uploadFiles(files: List<MultipartFile>, userId: UUID): List<FileUploadResult> {
+        log.info("Uploading {} file(s) for userId={}", files.size, userId)
+        return files.map { file -> processFile(file, userId) }
+    }
 
+    private fun processFile(file: MultipartFile, userId: UUID): FileUploadResult {
         val extension = resolveExtension(file)
         validateContentType(file, extension)
 
         val tempFile = Files.createTempFile("upload_", ".$extension")
+        val framesDir = Files.createTempDirectory("frames_")
         try {
             file.transferTo(tempFile.toFile())
 
-            val key = "$userId/${UUID.randomUUID()}.$extension"
             val result = if (isVideo(extension)) {
-                moderationService.moderateVideo(tempFile, tempFile.parent)
+                moderationService.moderateVideo(tempFile, framesDir)
             } else {
                 moderationService.moderateImage(tempFile)
             }
 
-            if (result.nsfw) {
-                log.warn("NSFW content rejected: filename={}", file.originalFilename)
-                throw NsfwContentException(
-                    "File contains inappropriate content (confidence: %.1f%%)".format(result.confidencePercentage)
-                )
+            return if (result.nsfw) {
+                persistRejected(file, userId, extension, result)
+            } else {
+                persistApproved(file, userId, extension, tempFile, result)
             }
-
-            val url = uploadToS3(tempFile, key, file.contentType)
-
-            val entity = FileEntity(
-                userId = userId,
-                url = url,
-                filename = file.originalFilename ?: key,
-                emergencySituationId = emergencySituationId,
-                moderationStatus = ModerationStatus.APPROVED
-            )
-
-            val saved = fileRepository.save(entity)
-
-            val event = FileModeratedEvent(
-                fileId = saved.id,
-                userId = saved.userId,
-                moderateResult = "APPROVED",
-                emergencySituationId = saved.emergencySituationId
-            )
-            kafkaTemplate.send(fileModeratedTopic, saved.id.toString(), event)
-            log.info("File uploaded and approved: id={}, url={}", saved.id, saved.url)
-
-            return fileMapper.toResponse(saved)
         } finally {
+            deleteRecursively(framesDir)
             Files.deleteIfExists(tempFile)
         }
+    }
+
+    private fun persistRejected(
+        file: MultipartFile,
+        userId: UUID,
+        extension: String,
+        result: NsfwDetectionResult
+    ): FileUploadResult {
+        log.warn("NSFW content rejected: filename={}, confidence={}%", file.originalFilename, result.confidencePercentage)
+
+        val entity = FileEntity(
+            userId = userId,
+            url = null,
+            filename = file.originalFilename ?: "$userId/file.${extension}",
+            emergencySituationId = null,
+            moderationStatus = ModerationStatus.REJECTED
+        )
+        val saved = fileRepository.save(entity)
+        emitModeratedEvent(saved, ModerationStatus.REJECTED)
+
+        return FileUploadResult(
+            fileId = saved.id,
+            url = null,
+            moderationStatus = ModerationStatus.REJECTED,
+            confidencePercentage = result.confidencePercentage
+        )
+    }
+
+    private fun persistApproved(
+        file: MultipartFile,
+        userId: UUID,
+        extension: String,
+        tempFile: Path,
+        result: NsfwDetectionResult
+    ): FileUploadResult {
+        val key = "$userId/${UUID.randomUUID()}.$extension"
+        val url = uploadToS3(tempFile, key, file.contentType)
+
+        val entity = FileEntity(
+            userId = userId,
+            url = url,
+            filename = file.originalFilename ?: key,
+            emergencySituationId = null,
+            moderationStatus = ModerationStatus.APPROVED
+        )
+        val saved = fileRepository.save(entity)
+        emitModeratedEvent(saved, ModerationStatus.APPROVED)
+
+        log.info("File uploaded and approved: id={}, url={}", saved.id, saved.url)
+
+        return FileUploadResult(
+            fileId = saved.id,
+            url = saved.url,
+            moderationStatus = ModerationStatus.APPROVED,
+            confidencePercentage = result.confidencePercentage
+        )
+    }
+
+    private fun emitModeratedEvent(entity: FileEntity, status: ModerationStatus) {
+        val event = FileModeratedEvent(
+            fileId = entity.id,
+            userId = entity.userId,
+            moderateResult = status.name,
+            emergencySituationId = entity.emergencySituationId
+        )
+        kafkaTemplate.send(fileModeratedTopic, entity.id.toString(), event)
+    }
+
+    @Transactional
+    fun linkFiles(request: FileLinkRequest, userId: UUID): List<FileResponse> {
+        log.info("Linking {} file(s) to emergency {}", request.fileIds.size, request.emergencySituationId)
+
+        val files = fileRepository.findAllByIdInAndUserId(request.fileIds, userId)
+        val foundIds = files.map { it.id }.toSet()
+        val missingIds = request.fileIds.filterNot { foundIds.contains(it) }
+
+        if (missingIds.isNotEmpty()) {
+            throw NoSuchElementException("Files not found: $missingIds")
+        }
+
+        files.forEach { it.emergencySituationId = request.emergencySituationId }
+        val saved = fileRepository.saveAll(files)
+
+        return saved.map { fileMapper.toResponse(it) }
     }
 
     fun getFile(id: Long, userId: UUID): FileResponse {
@@ -104,12 +169,13 @@ class FileService(
         val entity = fileRepository.findByIdAndUserId(id, userId)
             ?: throw NoSuchElementException("File with id $id not found")
 
+        entity.url?.let { deleteFromS3(it) }
+
         val deleted = fileRepository.deleteByIdAndUserId(id, userId)
         if (deleted == 0) {
             throw NoSuchElementException("File with id $id not found")
         }
 
-        deleteFromS3(entity.url)
         log.info("File deleted: id={}", id)
     }
 
@@ -129,6 +195,13 @@ class FileService(
         val key = url.substringAfter("$bucket.s3.$region.amazonaws.com/")
         if (key.isBlank()) return
         s3Client.deleteObject(DeleteObjectRequest.builder().bucket(bucket).key(key).build())
+    }
+
+    private fun deleteRecursively(dir: Path) {
+        if (!Files.exists(dir)) return
+        Files.walk(dir)
+            .sorted(Comparator.reverseOrder())
+            .forEach { Files.deleteIfExists(it) }
     }
 
     private fun resolveExtension(file: MultipartFile): String {
