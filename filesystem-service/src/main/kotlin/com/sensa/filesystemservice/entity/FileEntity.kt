@@ -21,8 +21,8 @@ class FileEntity(
     @Column(name = "user_id", nullable = false)
     var userId: UUID,
 
-    @Column(name = "url", nullable = false, length = 1024)
-    var url: String,
+    @Column(name = "url", length = 1024)
+    var url: String?,
 
     @Column(name = "filename", nullable = false, length = 512)
     var filename: String,
