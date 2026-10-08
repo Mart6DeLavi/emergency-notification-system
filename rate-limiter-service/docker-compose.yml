@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  rate-limiter-service:
+    build: .
+    image: rate-limiter-service:latest
+    container_name: rate-limiter-service
+    ports:
+      - "8009:8009"
+    environment:
+      CONFIG_PATH: /app/config.yaml
+      RUST_LOG: rate_limiter_service=info
+    networks:
+      - sensa-network
+
+networks:
+  sensa-network:
+    driver: bridge
