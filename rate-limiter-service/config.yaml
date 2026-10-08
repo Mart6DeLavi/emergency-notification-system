@@ -1,0 +1,25 @@
+server:
+  port: 8009
+
+redis:
+  url: "redis://localhost:6379"
+
+limits:
+  authentication-service:
+    capacity: 10
+    refill_per_second: 1.0
+  user-data-management-service:
+    capacity: 20
+    refill_per_second: 2.0
+  template-service:
+    capacity: 20
+    refill_per_second: 2.0
+  notification-service:
+    capacity: 20
+    refill_per_second: 2.0
+  emergency-situation-request-service:
+    capacity: 15
+    refill_per_second: 1.5
+  filesystem-service:
+    capacity: 10
+    refill_per_second: 1.0
