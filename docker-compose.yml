@@ -46,20 +46,50 @@ services:
     volumes:
       - db-postgres-template:/data
 
-  user-management-service-postgres:
-    container_name: user-management-service-postgres
-    hostname: user-management-service-postgres
+  user-data-management-service-postgres:
+    container_name: user-data-management-service-postgres
+    hostname: user-data-management-service-postgres
     image: postgres:15.2
     restart: always
     ports:
       - '5436:5432'
     environment:
-      POSTGRES_DB: Sensa_User_Management_Service
+      POSTGRES_DB: Sensa_User_Data_Management_Service
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 28859013
       PGDATA: /data
     volumes:
       - db-postgres-user-management:/data
+
+  filesystem-service-postgres:
+    container_name: filesystem-service-postgres
+    hostname: filesystem-service-postgres
+    image: postgres:15.2
+    restart: always
+    ports:
+      - '5437:5432'
+    environment:
+      POSTGRES_DB: Sensa_File_System_Service
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 28859013
+      PGDATA: /data
+    volumes:
+      - db-postgres-filesystem:/data
+
+  emergency-service-postgres:
+    container_name: emergency-service-postgres
+    hostname: emergency-service-postgres
+    image: postgres:15.2
+    restart: always
+    ports:
+      - '5438:5432'
+    environment:
+      POSTGRES_DB: Sensa_Emergency_Service
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 28859013
+      PGDATA: /data
+    volumes:
+      - db-postgres-emergency:/data
 
   redis:
     container_name: redis
@@ -67,7 +97,6 @@ services:
     restart: always
     ports:
       - '6379:6379'
-
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.3.2
@@ -96,6 +125,13 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
     restart: always
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - '5672:5672'
+      - '15672:15672'
 
   sensa-discovery-server:
     container_name: sensa-discovery-server
@@ -104,6 +140,22 @@ services:
     ports:
       - '8761:8761'
 
+  sensa-load-balancer-service:
+    container_name: sensa-load-balancer-service
+    image: load-balancer-service:latest
+    restart: always
+    ports:
+      - '8008:8008'
+
+  sensa-rate-limiter-service:
+    container_name: sensa-rate-limiter-service
+    image: rate-limiter-service:latest
+    restart: always
+    ports:
+      - '8009:8009'
+    depends_on:
+      - redis
+
   sensa-api-gateway:
     container_name: sensa-api-gateway
     image: api-gateway:latest
@@ -111,9 +163,8 @@ services:
     ports:
       - '8080:8007'
     depends_on:
-      - sensa-discovery-server
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
+      - sensa-load-balancer-service
+      - sensa-rate-limiter-service
 
   sensa-authentication-service:
     container_name: sensa-authentication-service
@@ -121,19 +172,18 @@ services:
     restart: always
     depends_on:
       - authentication-service-postgres
-      - redis
       - sensa-discovery-server
       - broker
       - zookeeper
     environment:
       - SPRING_PROFILES_ACTIVE=docker
 
-  sensa-user-management-service:
-    container_name: sensa-user-management-service
-    image: user-management-service:latest
+  sensa-user-data-management-service:
+    container_name: sensa-user-data-management-service
+    image: user-data-management-service:latest
     restart: always
     depends_on:
-      - user-management-service-postgres
+      - user-data-management-service-postgres
       - sensa-discovery-server
       - broker
       - zookeeper
@@ -145,11 +195,9 @@ services:
     image: message-delivery-service:latest
     restart: always
     depends_on:
-      - sensa-discovery-server
-      - broker
-      - zookeeper
+      - rabbitmq
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
+      RABBITMQ_URL: amqp://rabbitmq:5672/%2f
 
   sensa-notification-service:
     container_name: sensa-notification-service
@@ -160,6 +208,7 @@ services:
       - sensa-discovery-server
       - broker
       - zookeeper
+      - rabbitmq
     environment:
       - SPRING_PROFILES_ACTIVE=docker
 
@@ -175,8 +224,34 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=docker
 
+  sensa-filesystem-service:
+    container_name: sensa-filesystem-service
+    image: filesystem-service:latest
+    restart: always
+    depends_on:
+      - filesystem-service-postgres
+      - sensa-discovery-server
+      - broker
+      - zookeeper
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+  sensa-emergency-situation-request-service:
+    container_name: sensa-emergency-situation-request-service
+    image: emergency-situation-request-service:latest
+    restart: always
+    depends_on:
+      - emergency-service-postgres
+      - broker
+      - zookeeper
+    environment:
+      DATABASE_URL: postgres://postgres:28859013@emergency-service-postgres:5432/Sensa_Emergency_Service
+      KAFKA_BROKERS: broker:9092
+
 volumes:
   db-postgres-authentication:
   db-postgres-notification:
   db-postgres-template:
   db-postgres-user-management:
+  db-postgres-filesystem:
+  db-postgres-emergency:
