@@ -15,7 +15,8 @@ impl Config {
                 .unwrap_or_else(|_| "postgres://postgres:postgres@localhost:5432/Sensa_Emergency_Service".to_string()),
             kafka_brokers: env::var("KAFKA_BROKERS")
                 .unwrap_or_else(|_| "localhost:9092".to_string()),
-            jwt_secret: env::var("JWT_SECRET")
+            jwt_secret: env::var("JWT_USER_SECRET")
+                .or_else(|_| env::var("JWT_SECRET"))
                 .unwrap_or_else(|_| "change-me".to_string()),
             server_port: env::var("SERVER_PORT")
                 .unwrap_or_else(|_| "8006".to_string())
