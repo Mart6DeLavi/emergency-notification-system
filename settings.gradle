@@ -1,6 +1,5 @@
 rootProject.name = 'SENSA'
 
-include("api-gateway")
 include("authentication-service")
 include("discovery-server")
 include("filesystem-service")
