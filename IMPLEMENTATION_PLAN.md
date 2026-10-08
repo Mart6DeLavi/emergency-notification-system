@@ -78,9 +78,9 @@ status VARCHAR · created_at TIMESTAMPTZ
 1. Kafka **consumer** `emergency.confirmed`
 2. **Рендеринг** (как в notification-service2): fetch шаблона из template-service (RestTemplate уже подключён, но не используется), `{{placeholder}}` → value из `templateData`, `\n`→`<br>` для PUSH
 3. **Получатели:** запрос к `user-data-management-service` по city+street (нужен новый endpoint — см. 3.3)
-4. Для каждого получателя — событие `notification.delivery` в Kafka (по каналу из настроек пользователя)
+4. Для каждого получателя — событие `notification.delivery` в RabbitMQ (по каналу из настроек пользователя: PUSH/EMAIL/SMS)
 
-**Связи:** ← Kafka `emergency.confirmed`, → template-service (рендер), → user-data-management-service (зона), → Kafka `notification.delivery`
+**Связи:** ← Kafka `emergency.confirmed`, → template-service (рендер), → user-data-management-service (зона), → RabbitMQ `notification.delivery`
 
 ---
 
@@ -92,13 +92,13 @@ status VARCHAR · created_at TIMESTAMPTZ
 
 ### 3.4 message-delivery-service — Переписать (Rust)
 
-**Назначение:** реальная доставка email/push/SMS (THESIS.md: RabbitMQ для уведомлений, но в проекте — Kafka).
+**Назначение:** реальная доставка email/push/SMS (THESIS.md: RabbitMQ для уведомлений).
 
 **Что сделать:** переписать из Java `com.coopergroup` в Rust `com.sensa` (структура та же что в 3.1):
-- Kafka **consumer** `notification.delivery`
-- Доставка: email (Amazon SES стаб), push (стаб), SMS (Twilio стаб) — с логированием + статусом
+- RabbitMQ **consumer** `notification.delivery` (lapin)
+- Доставка: push (FCM), email (lettre SMTP), SMS (AWS SNS) — с graceful fallback до логирования, если провайдер не настроен
 
-**Связи:** ← Kafka `notification.delivery` (notification-service)
+**Связи:** ← RabbitMQ `notification.delivery` (notification-service)
 
 ---
 
@@ -114,10 +114,12 @@ id BIGSERIAL PK · user_id UUID · url · created_at · emergency_situation_id
 ```
 
 **Что сделать:**
-1. `POST /api/v1/files` (multipart) → загрузка в S3 + метаданные
-2. Асинхронный `ModerationService` (интерфейс-заглушка, реализацию добавишь позже) → Kafka `file.moderated {fileId, moderateResult}`
+1. `POST /api/v1/files` (multipart, батч) → загрузка в S3 + модерация каждого файла
+2. `PATCH /api/v1/files/link` — привязка одобренных файлов к emergency (`emergency_situation_id`)
+3. Асинхронная модерация (ONNX NSFW-модель) → Kafka `file.moderated {fileId, moderateResult}` (для аудита/истории)
+4. REJECTED-файлы сохраняются в БД с `url = null` (без загрузки в S3)
 
-**Связи:** → S3, → Kafka `file.moderated` (emergency-situation-request-service)
+**Связи:** → S3, → Kafka `file.moderated` (аудит). Привязка файлов к инциденту — через `CreateEmergencyRequest.files` (emergency-situation-request-service) + `PATCH /files/link`.
 
 ---
 
@@ -141,7 +143,7 @@ id BIGSERIAL PK · user_id UUID · url · created_at · emergency_situation_id
 ```
         ┌────────────────────── Бизнес-поток ──────────────────────┐
 Пользователь (app) ──▶ filesystem-service (S3 + ML-модерация)
-                              │  Kafka: file.moderated
+                              │  HTTP: PATCH /files/link (привязка)
                               ▼
                  emergency-situation-request-service
                               │  Kafka: emergency.confirmed
@@ -151,7 +153,7 @@ id BIGSERIAL PK · user_id UUID · url · created_at · emergency_situation_id
                               │  HTTP city+street │
                               ▼                   │
                     user-data-management-service ┘
-                              │  Kafka: notification.delivery
+                              │  RabbitMQ: notification.delivery
                               ▼
                     message-delivery-service (email/push/SMS)
 ```
