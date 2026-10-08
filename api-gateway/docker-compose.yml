@@ -4,10 +4,15 @@ services:
   api-gateway:
     build: .
     image: api-gateway:latest
-    container_name: api_gateway
-
+    container_name: api-gateway
     ports:
       - "8007:8007"
     environment:
-      - SPRING_PROFILES_ACTIVE=dev
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://localhost:8761/eureka
+      CONFIG_PATH: /app/config.yaml
+      RUST_LOG: api_gateway=info
+    networks:
+      - sensa-network
+
+networks:
+  sensa-network:
+    driver: bridge

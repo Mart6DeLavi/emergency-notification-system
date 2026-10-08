@@ -1,0 +1,22 @@
+server:
+  port: 8007
+
+rate_limiter:
+  url: "http://localhost:8009"
+
+load_balancer:
+  url: "http://localhost:8008"
+
+routes:
+  - path: "/api/v1/auth"
+    service: "authentication-service"
+  - path: "/api/v1/users"
+    service: "user-data-management-service"
+  - path: "/api/v1/templates"
+    service: "template-service"
+  - path: "/api/v1/notifications"
+    service: "notification-service"
+  - path: "/api/v1/emergencies"
+    service: "emergency-situation-request-service"
+  - path: "/api/v1/files"
+    service: "filesystem-service"
