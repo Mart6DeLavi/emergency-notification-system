@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  load-balancer-service:
+    build: .
+    image: load-balancer-service:latest
+    container_name: load-balancer-service
+    ports:
+      - "8008:8008"
+    environment:
+      CONFIG_PATH: /app/config.yaml
+      RUST_LOG: load_balancer_service=info
+    networks:
+      - sensa-network
+
+networks:
+  sensa-network:
+    driver: bridge
