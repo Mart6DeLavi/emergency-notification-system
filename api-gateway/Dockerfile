@@ -1,5 +1,22 @@
-FROM eclipse-temurin:21-jdk
+FROM rust:1.98-slim AS builder
 
-COPY build/libs/*.jar /app.jar
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY Cargo.toml ./
+COPY config.yaml ./
+COPY src ./src
+
+RUN cargo build --release
+
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates libssl3 && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /app/target/release/api-gateway /usr/local/bin/
+COPY --from=builder /app/config.yaml /app/config.yaml
+
+WORKDIR /app
 EXPOSE 8007
-ENTRYPOINT ["java", "-jar", "/app.jar"]
+ENTRYPOINT ["api-gateway"]
