@@ -10,7 +10,7 @@ services:
     environment:
       DATABASE_URL: postgres://postgres:28859013@postgres:5432/Sensa_Emergency_Service
       KAFKA_BROKERS: kafka:9092
-      JWT_SECRET: change-me
+      JWT_USER_SECRET: change-me
       SERVER_PORT: "8006"
       RUST_LOG: emergency_situation_request_service=info
     depends_on:
