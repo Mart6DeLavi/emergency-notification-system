@@ -1,0 +1,133 @@
+:root {
+  --app-bg: #f4f6f9;
+  --app-header-bg: #0f1b2d;
+  --app-header-fg: #ffffff;
+  --app-sidebar-bg: #16233a;
+  --app-sidebar-fg: #c7d2e0;
+  --app-sidebar-active: #2563eb;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#__nuxt {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--app-bg);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.app-sidebar {
+  width: 240px;
+  flex: 0 0 240px;
+  background: var(--app-sidebar-bg);
+  color: var(--app-sidebar-fg);
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 0.75rem;
+  gap: 0.25rem;
+}
+
+.app-brand {
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.05rem;
+  padding: 0.5rem 0.75rem 1rem;
+}
+
+.app-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  color: var(--app-sidebar-fg);
+  font-size: 0.95rem;
+  transition: background 0.15s ease;
+}
+
+.app-nav-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.app-nav-item.active,
+.app-nav-item.router-link-active {
+  background: var(--app-sidebar-active);
+  color: #fff;
+}
+
+.app-main-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.app-topbar {
+  height: 60px;
+  background: #fff;
+  border-bottom: 1px solid #e4e8ef;
+  display: flex;
+  align-items: center;
+  padding: 0 1.5rem;
+  gap: 1rem;
+}
+
+.app-topbar-title {
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.app-topbar-spacer {
+  flex: 1;
+}
+
+.app-content {
+  padding: 1.5rem;
+  flex: 1;
+}
+
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--app-header-bg);
+  padding: 1rem;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+}
+
+.muted {
+  color: #64748b;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mt-3 { margin-top: 1.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.w-full { width: 100%; }
