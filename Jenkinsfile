@@ -1,119 +1,55 @@
-pipeline {
-    agent none
+// SENSA CI/CD pipeline.
+//
+// Every microservice runs four stages in parallel:
+//   Quality  -> run tests
+//   Build    -> build artifact + Docker image
+//   Security -> blocking Trivy scan (HIGH/CRITICAL)
+//   Deploy   -> push image to registry (+ optional guarded rollout)
+//
+// All stage logic lives in jenkins/vars/*.groovy and is aggregated by
+// jenkins/ci.groovy. The list of services lives in jenkins/services.groovy.
 
-    environment {
-        REGISTRY = credentials('docker-registry-credentials')
-        DOCKER_IMAGE_PREFIX = 'sensa'
+env.DOCKER_IMAGE_PREFIX = env.DOCKER_IMAGE_PREFIX ?: 'sensa'
+env.NOTIFY_ENABLED = env.NOTIFY_ENABLED ?: 'false'
+env.NOTIFY_EMAIL_RECIPIENTS = env.NOTIFY_EMAIL_RECIPIENTS ?: ''
+env.DEPLOY_HOST = env.DEPLOY_HOST ?: ''
+
+// Bootstrap on any node: checkout once to read the central service list.
+def labels = [:]
+node {
+    checkout scm
+    def bootstrap = load 'jenkins/services.groovy'
+    bootstrap.allServices().each { service ->
+        labels[service] = bootstrap.agentLabel(service)
     }
+}
 
-    stages {
-        stage('Build & Test — Java/Kotlin (Gradle)') {
-            parallel {
-                stage('authentication-service') {
-                    agent { label 'gradle' }
-                    steps { gradleBuild('authentication-service') }
-                }
-                stage('discovery-server') {
-                    agent { label 'gradle' }
-                    steps { gradleBuild('discovery-server') }
-                }
-                stage('filesystem-service') {
-                    agent { label 'gradle' }
-                    steps { gradleBuild('filesystem-service') }
-                }
-                stage('notification-service') {
-                    agent { label 'gradle' }
-                    steps { gradleBuild('notification-service') }
-                }
-                stage('template-service') {
-                    agent { label 'gradle' }
-                    steps { gradleBuild('template-service') }
-                }
-                stage('user-management-service') {
-                    agent { label 'gradle' }
-                    steps { gradleBuild('user-management-service') }
-                }
-            }
-        }
-
-        stage('Build & Test — Rust (Cargo)') {
-            parallel {
-                stage('emergency-situation-request-service') {
-                    agent { label 'rust' }
-                    steps { cargoBuild('emergency-situation-request-service') }
-                }
-                stage('message-delivery-service') {
-                    agent { label 'rust' }
-                    steps { cargoBuild('message-delivery-service') }
-                }
-                stage('load-balancer-service') {
-                    agent { label 'rust' }
-                    steps { cargoBuild('load-balancer-service') }
-                }
-                stage('rate-limiter-service') {
-                    agent { label 'rust' }
-                    steps { cargoBuild('rate-limiter-service') }
-                }
-                stage('api-gateway') {
-                    agent { label 'rust' }
-                    steps { cargoBuild('api-gateway') }
-                }
-            }
-        }
-
-        stage('Docker Build & Push') {
-            agent { label 'docker' }
-            steps {
-                script {
-                    def services = [
-                        'authentication-service',
-                        'discovery-server',
-                        'filesystem-service',
-                        'notification-service',
-                        'template-service',
-                        'user-management-service',
-                        'emergency-situation-request-service',
-                        'message-delivery-service',
-                        'load-balancer-service',
-                        'rate-limiter-service',
-                        'api-gateway'
-                    ]
-                    services.each { service ->
-                        dockerBuildAndPush(service)
+try {
+    stage('Services') {
+        def branches = labels.collectEntries { service, label ->
+            [(service): {
+                node(label) {
+                    checkout scm
+                    def ci = load 'jenkins/ci.groovy'
+                    try {
+                        stage(service) {
+                            stage('Quality')  { ci.quality(service) }
+                            stage('Build')    { ci.build(service) }
+                            stage('Security') { ci.security(service) }
+                            stage('Deploy')   { ci.deploy(service) }
+                        }
+                    } finally {
+                        cleanWs()
                     }
                 }
-            }
+            }]
         }
+        parallel branches
     }
-
-    post {
-        always {
-            cleanWs()
-        }
+} finally {
+    node {
+        checkout scm
+        def ci = load 'jenkins/ci.groovy'
+        ci.notify(currentBuild.currentResult)
     }
-}
-
-def gradleBuild(String service) {
-    sh """
-        cd ${service}
-        ./gradlew --no-daemon clean build
-    """
-}
-
-def cargoBuild(String service) {
-    sh """
-        cd ${service}
-        cargo build
-        cargo test
-    """
-}
-
-def dockerBuildAndPush(String service) {
-    def imageName = "${DOCKER_IMAGE_PREFIX}/${service}"
-    def versionTag = "${env.BUILD_NUMBER}"
-    sh """
-        docker build -t ${imageName}:${versionTag} -t ${imageName}:latest ./${service}
-        docker push ${imageName}:${versionTag}
-        docker push ${imageName}:latest
-    """
 }
