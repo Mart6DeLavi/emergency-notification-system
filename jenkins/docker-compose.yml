@@ -18,7 +18,8 @@ services:
       - sensa-jenkins-net
 
   jenkins-agent-gradle:
-    image: jenkins/inbound-agent:jdk21
+    build: ./agents/gradle
+    image: sensa-jenkins-agent-gradle:latest
     container_name: sensa-jenkins-agent-gradle
     restart: always
     depends_on:
@@ -33,7 +34,8 @@ services:
       - sensa-jenkins-net
 
   jenkins-agent-rust:
-    image: jenkins/inbound-agent:jdk21
+    build: ./agents/rust
+    image: sensa-jenkins-agent-rust:latest
     container_name: sensa-jenkins-agent-rust
     restart: always
     depends_on:
