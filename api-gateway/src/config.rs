@@ -7,7 +7,17 @@ pub struct Config {
     pub server: ServerConfig,
     pub rate_limiter: RateLimiterConfig,
     pub load_balancer: LoadBalancerConfig,
+    #[serde(default)]
+    pub cors: CorsConfig,
     pub routes: Vec<Route>,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct CorsConfig {
+    /// Allowed browser origins. Empty means the built-in default
+    /// (`http://localhost:3000`) is used.
+    #[serde(default)]
+    pub allowed_origins: Vec<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
