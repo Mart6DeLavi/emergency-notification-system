@@ -15,8 +15,9 @@ import com.sensa.notificationservice.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -33,7 +34,7 @@ public class NotificationService {
     private final TemplateServiceClient templateServiceClient;
     private final UserDataServiceClient userDataServiceClient;
 
-    @Transactional
+    @CacheEvict(cacheNames = "notifications", key = "#userId")
     public NotificationResponse createNotification(NotificationRequest request, UUID userId) {
         log.info("Creating notification: templateName={}, userId={}", request.templateName(), userId);
 
@@ -43,6 +44,7 @@ public class NotificationService {
         return notificationMapper.toResponse(entity);
     }
 
+    @Cacheable(cacheNames = "notifications", key = "#userId")
     public List<NotificationResponse> getMyNotifications(UUID userId) {
         return notificationRepository.findByUserIdOrderByCreatedAtDesc(userId)
                 .stream()
@@ -50,19 +52,19 @@ public class NotificationService {
                 .toList();
     }
 
-    public NotificationResponse getNotification(Long id, UUID userId) {
+    public NotificationResponse getNotification(String id, UUID userId) {
         return notificationRepository.findByIdAndUserId(id, userId)
                 .map(notificationMapper::toResponse)
                 .orElseThrow(() -> new NotificationNotFoundException(
-                        String.format("Notification with id %d not found", id)));
+                        String.format("Notification with id %s not found", id)));
     }
 
-    @Transactional
-    public void deleteNotification(Long id, UUID userId) {
-        int deleted = notificationRepository.deleteByIdAndUserId(id, userId);
-        if (deleted == 0) {
+    @CacheEvict(cacheNames = "notifications", key = "#userId")
+    public void deleteNotification(String id, UUID userId) {
+        long deleted = notificationRepository.deleteByIdAndUserId(id, userId);
+        if (deleted == 0L) {
             throw new NotificationNotFoundException(
-                    String.format("Notification with id %d not found", id));
+                    String.format("Notification with id %s not found", id));
         }
     }
 

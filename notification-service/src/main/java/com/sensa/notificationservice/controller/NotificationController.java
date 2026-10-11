@@ -59,7 +59,7 @@ public class NotificationController {
     @GetMapping("/{id}")
     public ResponseEntity<NotificationResponse> getNotification(
             @AuthenticationPrincipal UUID userId,
-            @PathVariable Long id
+            @PathVariable String id
     ) {
         return ResponseEntity.ok(notificationService.getNotification(id, userId));
     }
@@ -72,7 +72,7 @@ public class NotificationController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteNotification(
             @AuthenticationPrincipal UUID userId,
-            @PathVariable Long id
+            @PathVariable String id
     ) {
         notificationService.deleteNotification(id, userId);
         return ResponseEntity.noContent().build();

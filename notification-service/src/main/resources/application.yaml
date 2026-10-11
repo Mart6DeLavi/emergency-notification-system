@@ -5,15 +5,12 @@ spring:
   application:
     name: notification-service
 
-  datasource:
-    url: jdbc:postgresql://localhost:5432/Sensa_Notification_Service
-    username: ${POSTGRES_USERNAME}
-    password: ${POSTGRES_PASSWORD}
-    driver-class-name: org.postgresql.Driver
-
-  jpa:
-    hibernate:
-      ddl-auto: validate
+  data:
+    mongodb:
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/Sensa_Notification_Service}
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
 
   kafka:
     bootstrap-servers: localhost:9092
@@ -25,9 +22,6 @@ spring:
     password: ${RABBITMQ_PASSWORD:guest}
     template:
       exchange: notification.exchange
-
-  liquibase:
-    change-log: classpath:/db/changelog/db.changelog-master.yaml
 
 jwt:
   secret: ${JWT_USER_SECRET}
