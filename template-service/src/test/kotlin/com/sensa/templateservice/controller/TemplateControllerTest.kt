@@ -58,7 +58,7 @@ class TemplateControllerTest {
         templateName: String = "alert-template",
         channel: TemplateChannel = TemplateChannel.PUSH
     ) = TemplateResponse(
-        id = 1L,
+        id = "1",
         templateName = templateName,
         description = "Test description",
         channel = channel,

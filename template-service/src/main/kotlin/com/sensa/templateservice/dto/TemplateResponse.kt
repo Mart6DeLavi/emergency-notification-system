@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 data class TemplateResponse(
-    val id: Long,
+    val id: String?,
     val templateName: String,
     val description: String?,
     val channel: TemplateChannel,

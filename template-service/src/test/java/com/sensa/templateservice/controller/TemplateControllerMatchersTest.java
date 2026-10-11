@@ -59,7 +59,7 @@ public class TemplateControllerMatchersTest {
     }
 
     private TemplateResponse makeResponse(String templateName, TemplateChannel channel) {
-        return new TemplateResponse(1L, templateName, "Test description", channel, "Test content",
+        return new TemplateResponse("1", templateName, "Test description", channel, "Test content",
                 userId, now, now);
     }
 

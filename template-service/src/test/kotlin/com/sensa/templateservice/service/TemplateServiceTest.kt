@@ -32,7 +32,7 @@ class TemplateServiceTest {
     }
 
     private fun buildEntity(
-        id: Long = 1L,
+        id: String? = "1",
         templateName: String = "alert-template",
         description: String? = "Emergency alert",
         channel: TemplateChannel = TemplateChannel.PUSH,
@@ -62,7 +62,7 @@ class TemplateServiceTest {
     )
 
     private fun buildResponse(
-        id: Long = 1L,
+        id: String = "1",
         templateName: String = "alert-template",
         description: String? = "Emergency alert",
         channel: TemplateChannel = TemplateChannel.PUSH,
@@ -183,14 +183,14 @@ class TemplateServiceTest {
 
     @Test
     fun `delete template success`() {
-        Mockito.`when`(templateRepository.deleteByTemplateName("alert-template")).thenReturn(1)
+        Mockito.`when`(templateRepository.deleteByTemplateName("alert-template")).thenReturn(1L)
 
         assertDoesNotThrow { templateService.delete("alert-template") }
     }
 
     @Test
     fun `delete template not found throws exception`() {
-        Mockito.`when`(templateRepository.deleteByTemplateName("unknown")).thenReturn(0)
+        Mockito.`when`(templateRepository.deleteByTemplateName("unknown")).thenReturn(0L)
 
         assertThrows(TemplateNotFoundException::class.java) {
             templateService.delete("unknown")

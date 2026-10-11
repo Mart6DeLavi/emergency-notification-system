@@ -7,8 +7,9 @@ import com.sensa.templateservice.exception.TemplateAlreadyExistsException
 import com.sensa.templateservice.exception.TemplateNotFoundException
 import com.sensa.templateservice.mapper.TemplateMapper
 import com.sensa.templateservice.repository.TemplateRepository
+import org.springframework.cache.annotation.CacheEvict
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
 
 @Service
@@ -16,7 +17,6 @@ class TemplateService(
     private val templateRepository: TemplateRepository,
     private val templateMapper: TemplateMapper
 ) {
-    @Transactional
     fun create(request: TemplateRequest, createdBy: UUID): TemplateResponse {
         if (templateRepository.existsByTemplateName(request.templateName)) {
             throw TemplateAlreadyExistsException(request.templateName)
@@ -25,6 +25,7 @@ class TemplateService(
         return templateMapper.toResponse(templateRepository.save(entity))
     }
 
+    @Cacheable(cacheNames = ["templates"], key = "#templateName")
     fun getByTemplateName(templateName: String): TemplateResponse {
         val entity = templateRepository.findByTemplateName(templateName)
             ?: throw TemplateNotFoundException(templateName)
@@ -39,7 +40,7 @@ class TemplateService(
         return templateRepository.findByChannel(channel).map { templateMapper.toResponse(it) }
     }
 
-    @Transactional
+    @CacheEvict(cacheNames = ["templates"], key = "#templateName")
     fun update(templateName: String, request: TemplateRequest): TemplateResponse {
         val existing = templateRepository.findByTemplateName(templateName)
             ?: throw TemplateNotFoundException(templateName)
@@ -47,9 +48,9 @@ class TemplateService(
         return templateMapper.toResponse(templateRepository.save(existing))
     }
 
-    @Transactional
+    @CacheEvict(cacheNames = ["templates"], key = "#templateName")
     fun delete(templateName: String) {
         val rows = templateRepository.deleteByTemplateName(templateName)
-        if (rows == 0) throw TemplateNotFoundException(templateName)
+        if (rows == 0L) throw TemplateNotFoundException(templateName)
     }
 }
