@@ -64,7 +64,7 @@ class NotificationServiceTest {
                 .build();
 
         Notification entity = Notification.builder()
-                .id(1L)
+                .id("1")
                 .userId(userId)
                 .templateName("alert-template")
                 .title("Emergency Alert")
@@ -76,7 +76,7 @@ class NotificationServiceTest {
                 .build();
 
         NotificationResponse response = NotificationResponse.builder()
-                .id(1L)
+                .id("1")
                 .userId(userId)
                 .templateName("alert-template")
                 .title("Emergency Alert")
@@ -103,7 +103,7 @@ class NotificationServiceTest {
     @Test
     void getMyNotifications_ReturnsList() {
         Notification entity = Notification.builder()
-                .id(1L)
+                .id("1")
                 .userId(userId)
                 .templateName("test")
                 .title("Test")
@@ -124,40 +124,40 @@ class NotificationServiceTest {
     @Test
     void getNotification_Success() {
         Notification entity = Notification.builder()
-                .id(1L)
+                .id("1")
                 .userId(userId)
                 .title("Test")
                 .build();
 
-        when(notificationRepository.findByIdAndUserId(1L, userId)).thenReturn(Optional.of(entity));
+        when(notificationRepository.findByIdAndUserId("1", userId)).thenReturn(Optional.of(entity));
         when(notificationMapper.toResponse(entity)).thenReturn(mock(NotificationResponse.class));
 
-        NotificationResponse result = notificationService.getNotification(1L, userId);
+        NotificationResponse result = notificationService.getNotification("1", userId);
 
         assertNotNull(result);
     }
 
     @Test
     void getNotification_NotFound() {
-        when(notificationRepository.findByIdAndUserId(99L, userId)).thenReturn(Optional.empty());
+        when(notificationRepository.findByIdAndUserId("99", userId)).thenReturn(Optional.empty());
 
         assertThrows(NotificationNotFoundException.class,
-                () -> notificationService.getNotification(99L, userId));
+                () -> notificationService.getNotification("99", userId));
     }
 
     @Test
     void deleteNotification_Success() {
-        when(notificationRepository.deleteByIdAndUserId(1L, userId)).thenReturn(1);
+        when(notificationRepository.deleteByIdAndUserId("1", userId)).thenReturn(1L);
 
-        assertDoesNotThrow(() -> notificationService.deleteNotification(1L, userId));
+        assertDoesNotThrow(() -> notificationService.deleteNotification("1", userId));
     }
 
     @Test
     void deleteNotification_NotFound() {
-        when(notificationRepository.deleteByIdAndUserId(99L, userId)).thenReturn(0);
+        when(notificationRepository.deleteByIdAndUserId("99", userId)).thenReturn(0L);
 
         assertThrows(NotificationNotFoundException.class,
-                () -> notificationService.deleteNotification(99L, userId));
+                () -> notificationService.deleteNotification("99", userId));
     }
 
     @Test

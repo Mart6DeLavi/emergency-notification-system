@@ -70,7 +70,7 @@ class NotificationControllerTest {
                 .build();
 
         NotificationResponse response = NotificationResponse.builder()
-                .id(1L)
+                .id("1")
                 .userId(userId)
                 .templateName("alert")
                 .title("Alert")
@@ -87,7 +87,7 @@ class NotificationControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.id").value("1"))
                 .andExpect(jsonPath("$.title").value("Alert"));
     }
 
@@ -110,7 +110,7 @@ class NotificationControllerTest {
     @Test
     void getMyNotifications_ShouldReturn200() throws Exception {
         NotificationResponse response = NotificationResponse.builder()
-                .id(1L)
+                .id("1")
                 .userId(userId)
                 .templateName("alert")
                 .title("Alert")
@@ -130,7 +130,7 @@ class NotificationControllerTest {
     @Test
     void getNotification_ShouldReturn200() throws Exception {
         NotificationResponse response = NotificationResponse.builder()
-                .id(1L)
+                .id("1")
                 .userId(userId)
                 .templateName("alert")
                 .title("Alert")
@@ -139,12 +139,12 @@ class NotificationControllerTest {
                 .status(NotificationStatus.PENDING)
                 .build();
 
-        when(notificationService.getNotification(eq(1L), any())).thenReturn(response);
+        when(notificationService.getNotification(eq("1"), any())).thenReturn(response);
 
         mockMvc.perform(get("/api/v1/notifications/1")
                         .header("Authorization", "Bearer " + jwtToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1));
+                .andExpect(jsonPath("$.id").value("1"));
     }
 
     @Test

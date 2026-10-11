@@ -4,7 +4,7 @@ import lombok.Builder;
 
 @Builder
 public record TemplateDto(
-        Long id,
+        String id,
         String templateName,
         String description,
         String channel,

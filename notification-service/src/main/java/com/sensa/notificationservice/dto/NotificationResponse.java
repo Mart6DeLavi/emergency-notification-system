@@ -9,7 +9,7 @@ import java.util.UUID;
 
 @Builder
 public record NotificationResponse(
-        Long id,
+        String id,
         UUID userId,
         String templateName,
         String title,
