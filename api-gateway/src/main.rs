@@ -1,7 +1,7 @@
 use crate::config::Config;
 use axum::body::Body;
 use axum::extract::State;
-use axum::http::{HeaderMap, Request, StatusCode};
+use axum::http::{HeaderMap, HeaderValue, Request, StatusCode};
 use axum::response::Response;
 use axum::routing::{any, get};
 use axum::{Json, Router};
@@ -10,6 +10,7 @@ use serde::Deserialize;
 use serde::Serialize;
 use std::net::SocketAddr;
 use std::sync::Arc;
+use tower_http::cors::{AllowOrigin, Any, CorsLayer};
 
 mod config;
 
@@ -39,6 +40,24 @@ struct InstanceResponse {
 #[derive(Serialize)]
 struct HealthResponse {
     status: &'static str,
+}
+
+fn build_cors(config: &Config) -> CorsLayer {
+    let origins: Vec<HeaderValue> = if config.cors.allowed_origins.is_empty() {
+        vec![HeaderValue::from_static("http://localhost:3000")]
+    } else {
+        config
+            .cors
+            .allowed_origins
+            .iter()
+            .filter_map(|origin| origin.parse::<HeaderValue>().ok())
+            .collect()
+    };
+
+    CorsLayer::new()
+        .allow_origin(AllowOrigin::list(origins))
+        .allow_methods(Any)
+        .allow_headers(Any)
 }
 
 async fn health() -> Json<HealthResponse> {
@@ -222,11 +241,13 @@ async fn main() {
     let config = Arc::new(Config::load(&config_path));
 
     let port = config.server.port;
+    let cors = build_cors(&config);
     let state = AppState { config };
 
     let app = Router::new()
         .route("/actuator/health", get(health))
         .fallback(any(proxy))
+        .layer(cors)
         .with_state(state);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
