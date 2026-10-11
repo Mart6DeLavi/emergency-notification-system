@@ -1,35 +1,32 @@
 package com.sensa.templateservice.entity
 
-import jakarta.persistence.*
+import org.springframework.data.annotation.CreatedDate
+import org.springframework.data.annotation.Id
+import org.springframework.data.annotation.LastModifiedDate
+import org.springframework.data.mongodb.core.index.Indexed
+import org.springframework.data.mongodb.core.mapping.Document
 import java.time.LocalDateTime
 import java.util.*
 
-@Entity
-@Table(name = "templates")
+@Document(collection = "templates")
 class Template(
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long = 0,
+    var id: String? = null,
 
-    @Column(name = "template_name", nullable = false, unique = true)
+    @Indexed(unique = true)
     var templateName: String,
 
-    @Column(name = "description", length = 500)
     var description: String? = null,
 
-    @Column(name = "channel", nullable = false, length = 10)
-    @Enumerated(EnumType.STRING)
     var channel: TemplateChannel,
 
-    @Column(name = "content", nullable = false, columnDefinition = "TEXT")
     var content: String,
 
-    @Column(name = "created_by", nullable = false)
     var createdBy: UUID,
 
-    @Column(name = "created_at", nullable = false)
+    @CreatedDate
     var createdAt: LocalDateTime = LocalDateTime.now(),
 
-    @Column(name = "updated_at", nullable = false)
+    @LastModifiedDate
     var updatedAt: LocalDateTime = LocalDateTime.now()
 )
