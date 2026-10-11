@@ -1,5 +1,6 @@
 package com.sensa.templateservice.config
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.boot.autoconfigure.cache.RedisCacheManagerBuilderCustomizer
 import org.springframework.cache.annotation.EnableCaching
@@ -16,8 +17,15 @@ import java.time.Duration
 class RedisCacheConfig {
 
     @Bean
-    fun redisCacheCustomizer(objectMapper: ObjectMapper): RedisCacheManagerBuilderCustomizer =
-        RedisCacheManagerBuilderCustomizer { builder ->
+    fun redisCacheCustomizer(objectMapper: ObjectMapper): RedisCacheManagerBuilderCustomizer {
+        val cacheMapper = objectMapper.copy()
+        cacheMapper.activateDefaultTyping(
+            cacheMapper.polymorphicTypeValidator,
+            ObjectMapper.DefaultTyping.OBJECT_AND_NON_CONCRETE,
+            JsonTypeInfo.As.PROPERTY
+        )
+
+        return RedisCacheManagerBuilderCustomizer { builder ->
             builder.cacheDefaults(
                 RedisCacheConfiguration.defaultCacheConfig()
                     .entryTtl(Duration.ofMinutes(10))
@@ -26,9 +34,10 @@ class RedisCacheConfig {
                     )
                     .serializeValuesWith(
                         RedisSerializationContext.SerializationPair.fromSerializer(
-                            GenericJackson2JsonRedisSerializer(objectMapper.copy())
+                            GenericJackson2JsonRedisSerializer(cacheMapper)
                         )
                     )
             )
         }
+    }
 }
