@@ -15,3 +15,8 @@ Emergency Notification System Diagram.excalidraw.png
 
 notification-service2/
 /filesystem-service2/
+
+# Root compose env
+.env
+.env.*
+!.env.example

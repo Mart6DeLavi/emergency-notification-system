@@ -1,257 +1,352 @@
-version: '3.8'
+name: sensa
+
+x-postgres-credentials: &postgres-credentials
+  POSTGRES_USERNAME: ${POSTGRES_USERNAME:-postgres}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+
+x-eureka: &eureka
+  EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+
+x-kafka: &kafka
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
 
 services:
-  authentication-service-postgres:
-    container_name: authentication-service-postgres
-    hostname: authentication-service-postgres
+  # ---------------------------------------------------------------------------
+  # Infrastructure
+  # ---------------------------------------------------------------------------
+  postgres:
     image: postgres:15.2
-    restart: always
-    ports:
-      - '5433:5432'
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: Sensa_Authentication_Service
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 28859013
-      PGDATA: /data
+      POSTGRES_USER: ${POSTGRES_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
     volumes:
-      - db-postgres-authentication:/data
+      - pg_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USERNAME:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - sensa-network
 
-  notification-service-postgres:
-    container_name: notification-service-postgres
-    hostname: notification-service-postgres
-    image: postgres:15.2
-    restart: always
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
     ports:
-      - '5434:5432'
-    environment:
-      POSTGRES_DB: Sensa_Notification_Service
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 28859013
-      PGDATA: /data
+      - "27017:27017"
     volumes:
-      - db-postgres-notification:/data
-
-  template-service-postgres:
-    container_name: template-service-postgres
-    hostname: template-service-postgres
-    image: postgres:15.2
-    restart: always
-    ports:
-      - '5435:5432'
-    environment:
-      POSTGRES_DB: Sensa_Template_Service
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 28859013
-      PGDATA: /data
-    volumes:
-      - db-postgres-template:/data
-
-  user-data-management-service-postgres:
-    container_name: user-data-management-service-postgres
-    hostname: user-data-management-service-postgres
-    image: postgres:15.2
-    restart: always
-    ports:
-      - '5436:5432'
-    environment:
-      POSTGRES_DB: Sensa_User_Data_Management_Service
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 28859013
-      PGDATA: /data
-    volumes:
-      - db-postgres-user-management:/data
-
-  filesystem-service-postgres:
-    container_name: filesystem-service-postgres
-    hostname: filesystem-service-postgres
-    image: postgres:15.2
-    restart: always
-    ports:
-      - '5437:5432'
-    environment:
-      POSTGRES_DB: Sensa_File_System_Service
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 28859013
-      PGDATA: /data
-    volumes:
-      - db-postgres-filesystem:/data
-
-  emergency-service-postgres:
-    container_name: emergency-service-postgres
-    hostname: emergency-service-postgres
-    image: postgres:15.2
-    restart: always
-    ports:
-      - '5438:5432'
-    environment:
-      POSTGRES_DB: Sensa_Emergency_Service
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 28859013
-      PGDATA: /data
-    volumes:
-      - db-postgres-emergency:/data
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - sensa-network
 
   redis:
-    container_name: redis
-    image: redis:7.0.11
-    restart: always
+    image: redis:7-alpine
+    restart: unless-stopped
     ports:
-      - '6379:6379'
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - sensa-network
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.3.2
-    container_name: zookeeper
+    restart: unless-stopped
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
     ports:
-      - '2181:2181'
-    restart: always
+      - "2181:2181"
+    networks:
+      - sensa-network
 
-  broker:
+  kafka:
     image: confluentinc/cp-kafka:7.3.2
-    container_name: broker
+    restart: unless-stopped
     depends_on:
-      - zookeeper
+      zookeeper:
+        condition: service_started
     ports:
-      - '9092:9092'
+      - "9092:9092"
+      - "29092:29092"
     environment:
       KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://broker:29092
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-    restart: always
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 20s
+    networks:
+      - sensa-network
 
   rabbitmq:
     image: rabbitmq:3-management
-    container_name: rabbitmq
-    restart: always
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-sensa}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-sensa}
     ports:
-      - '5672:5672'
-      - '15672:15672'
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    networks:
+      - sensa-network
 
-  sensa-discovery-server:
-    container_name: sensa-discovery-server
-    image: discovery-service:latest
-    restart: always
+  discovery-server:
+    build: ./discovery-server
+    restart: unless-stopped
     ports:
-      - '8761:8761'
+      - "8761:8761"
+    networks:
+      - sensa-network
 
-  sensa-load-balancer-service:
-    container_name: sensa-load-balancer-service
-    image: load-balancer-service:latest
-    restart: always
+  # ---------------------------------------------------------------------------
+  # Business services
+  # ---------------------------------------------------------------------------
+  authentication-service:
+    build: ./authentication-service
+    restart: unless-stopped
+    environment:
+      <<: [*postgres-credentials, *eureka, *kafka]
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/Sensa_Authentication_Service
+      JWT_USER_SECRET: ${JWT_USER_SECRET:?JWT_USER_SECRET is required}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      discovery-server:
+        condition: service_started
+    networks:
+      - sensa-network
+
+  user-data-management-service:
+    build: ./user-management-service
+    restart: unless-stopped
+    environment:
+      <<: [*postgres-credentials, *eureka, *kafka]
+      SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/Sensa_User_Data_Management_Service
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      discovery-server:
+        condition: service_started
+    networks:
+      - sensa-network
+
+  template-service:
+    build: ./template-service
+    restart: unless-stopped
+    environment:
+      <<: [*eureka]
+      SPRING_DATA_MONGODB_URI: mongodb://mongo:27017/Sensa_Template_Service
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_USER_SECRET: ${JWT_USER_SECRET:?JWT_USER_SECRET is required}
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      discovery-server:
+        condition: service_started
+    networks:
+      - sensa-network
+
+  notification-service:
+    build: ./notification-service
+    restart: unless-stopped
+    environment:
+      <<: [*eureka, *kafka]
+      SPRING_DATA_MONGODB_URI: mongodb://mongo:27017/Sensa_Notification_Service
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-sensa}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-sensa}
+      JWT_USER_SECRET: ${JWT_USER_SECRET:?JWT_USER_SECRET is required}
+      SPRING_APPLICATION_JSON: '{"services":{"template-service":{"url":"http://template-service:8003"},"user-data-management-service":{"url":"http://user-data-management-service:8000"}}}'
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      discovery-server:
+        condition: service_started
+    networks:
+      - sensa-network
+
+  filesystem-service:
+    build: ./filesystem-service
+    restart: unless-stopped
+    environment:
+      <<: [*postgres-credentials, *eureka, *kafka]
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/Sensa_File_System_Service
+      JWT_USER_SECRET: ${JWT_USER_SECRET:?JWT_USER_SECRET is required}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_REGION: ${AWS_REGION:-eu-west-1}
+      S3_BUCKET: ${S3_BUCKET:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      discovery-server:
+        condition: service_started
+    networks:
+      - sensa-network
+
+  emergency-situation-request-service:
+    build: ./emergency-situation-request-service
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USERNAME:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/Sensa_Emergency_Service
+      KAFKA_BROKERS: kafka:9092
+      JWT_USER_SECRET: ${JWT_USER_SECRET:?JWT_USER_SECRET is required}
+      SERVER_PORT: 8006
+      RUST_LOG: ${RUST_LOG:-info}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - sensa-network
+
+  message-delivery-service:
+    build: ./message-delivery-service
+    restart: unless-stopped
+    environment:
+      RABBITMQ_URL: amqp://${RABBITMQ_USERNAME:-sensa}:${RABBITMQ_PASSWORD:-sensa}@rabbitmq:5672/%2f
+      DELIVERY_QUEUE: notification.delivery
+      SERVER_PORT: 8005
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_TLS: ${SMTP_TLS:-true}
+      FCM_API_KEY: ${FCM_API_KEY:-}
+      FCM_PROJECT_ID: ${FCM_PROJECT_ID:-}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_REGION: ${AWS_REGION:-eu-west-1}
+      RUST_LOG: ${RUST_LOG:-info}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - sensa-network
+
+  # ---------------------------------------------------------------------------
+  # Infrastructure services (custom load-balancer / rate-limiter / gateway)
+  # ---------------------------------------------------------------------------
+  rate-limiter-service:
+    build: ./rate-limiter-service
+    restart: unless-stopped
+    environment:
+      CONFIG_PATH: /app/config.yaml
+      RUST_LOG: ${RUST_LOG:-info}
+    volumes:
+      - ./docker/rate-limiter/config.yaml:/app/config.yaml:ro
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - sensa-network
+
+  load-balancer-service:
+    build: ./load-balancer-service
+    restart: unless-stopped
+    environment:
+      CONFIG_PATH: /app/config.yaml
+      RUST_LOG: ${RUST_LOG:-info}
+    volumes:
+      - ./docker/load-balancer/config.yaml:/app/config.yaml:ro
+    networks:
+      - sensa-network
+
+  api-gateway:
+    build: ./api-gateway
+    restart: unless-stopped
     ports:
-      - '8008:8008'
+      - "8080:8007"
+    environment:
+      CONFIG_PATH: /app/config.yaml
+      RUST_LOG: ${RUST_LOG:-info}
+    volumes:
+      - ./docker/api-gateway/config.yaml:/app/config.yaml:ro
+    depends_on:
+      - rate-limiter-service
+      - load-balancer-service
+    networks:
+      - sensa-network
 
-  sensa-rate-limiter-service:
-    container_name: sensa-rate-limiter-service
-    image: rate-limiter-service:latest
-    restart: always
+  # ---------------------------------------------------------------------------
+  # Frontend
+  # ---------------------------------------------------------------------------
+  rescue-panel:
+    build: ./rescue-panel
+    restart: unless-stopped
     ports:
-      - '8009:8009'
-    depends_on:
-      - redis
-
-  sensa-api-gateway:
-    container_name: sensa-api-gateway
-    image: api-gateway:latest
-    restart: always
-    ports:
-      - '8080:8007'
-    depends_on:
-      - sensa-load-balancer-service
-      - sensa-rate-limiter-service
-
-  sensa-authentication-service:
-    container_name: sensa-authentication-service
-    image: authentication-service:latest
-    restart: always
-    depends_on:
-      - authentication-service-postgres
-      - sensa-discovery-server
-      - broker
-      - zookeeper
+      - "3000:3000"
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
-
-  sensa-user-data-management-service:
-    container_name: sensa-user-data-management-service
-    image: user-data-management-service:latest
-    restart: always
+      NUXT_PUBLIC_API_BASE: ${NUXT_PUBLIC_API_BASE:-http://localhost:8080}
     depends_on:
-      - user-data-management-service-postgres
-      - sensa-discovery-server
-      - broker
-      - zookeeper
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
+      - api-gateway
+    networks:
+      - sensa-network
 
-  sensa-message-delivery-service:
-    container_name: sensa-message-delivery-service
-    image: message-delivery-service:latest
-    restart: always
-    depends_on:
-      - rabbitmq
-    environment:
-      RABBITMQ_URL: amqp://rabbitmq:5672/%2f
-
-  sensa-notification-service:
-    container_name: sensa-notification-service
-    image: notification-service:latest
-    restart: always
-    depends_on:
-      - notification-service-postgres
-      - sensa-discovery-server
-      - broker
-      - zookeeper
-      - rabbitmq
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-
-  sensa-template-service:
-    container_name: sensa-template-service
-    image: template-service:latest
-    restart: always
-    depends_on:
-      - template-service-postgres
-      - sensa-discovery-server
-      - broker
-      - zookeeper
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-
-  sensa-filesystem-service:
-    container_name: sensa-filesystem-service
-    image: filesystem-service:latest
-    restart: always
-    depends_on:
-      - filesystem-service-postgres
-      - sensa-discovery-server
-      - broker
-      - zookeeper
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-
-  sensa-emergency-situation-request-service:
-    container_name: sensa-emergency-situation-request-service
-    image: emergency-situation-request-service:latest
-    restart: always
-    depends_on:
-      - emergency-service-postgres
-      - broker
-      - zookeeper
-    environment:
-      DATABASE_URL: postgres://postgres:28859013@emergency-service-postgres:5432/Sensa_Emergency_Service
-      KAFKA_BROKERS: broker:9092
+networks:
+  sensa-network:
+    driver: bridge
 
 volumes:
-  db-postgres-authentication:
-  db-postgres-notification:
-  db-postgres-template:
-  db-postgres-user-management:
-  db-postgres-filesystem:
-  db-postgres-emergency:
+  pg_data:
+  mongo_data:
+  redis_data:
+  rabbitmq_data:
