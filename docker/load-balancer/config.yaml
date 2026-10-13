@@ -1,0 +1,22 @@
+server:
+  port: 8008
+
+services:
+  authentication-service:
+    - host: authentication-service
+      port: 8001
+  user-data-management-service:
+    - host: user-data-management-service
+      port: 8000
+  template-service:
+    - host: template-service
+      port: 8003
+  notification-service:
+    - host: notification-service
+      port: 8004
+  emergency-situation-request-service:
+    - host: emergency-situation-request-service
+      port: 8006
+  filesystem-service:
+    - host: filesystem-service
+      port: 8002
