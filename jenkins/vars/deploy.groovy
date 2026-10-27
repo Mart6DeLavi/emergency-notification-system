@@ -1,11 +1,11 @@
-// Stage 4 — Deploy: publish the image to the registry and (optionally) roll out.
+// Stage 4 — Deploy: publish the image to the registry (optional).
 //
 // Registry login binds the `docker-registry-credentials` credential at runtime.
 // If that credential is not configured, login/push are skipped with a warning so
 // the pipeline still reports success while you finish Jenkins setup.
 //
-// Rollout is generic and guarded: set DEPLOY_HOST to a SSH target running the
-// project's docker-compose to enable it. When unset, images are only pushed.
+// The actual rollout happens once, after all services are built and scanned,
+// via rolloutAll() (see the Rollout stage in the root Jenkinsfile).
 
 def deploy(String service) {
     def image = "${env.DOCKER_IMAGE_PREFIX}/${service}"
@@ -18,8 +18,6 @@ def deploy(String service) {
     } else {
         echo "Skipping push for ${image}: registry credentials not available."
     }
-
-    rollout()
 }
 
 def dockerLogin() {
@@ -37,11 +35,27 @@ def dockerLogin() {
     }
 }
 
-def rollout() {
-    if (env.DEPLOY_HOST) {
-        sh "ssh -o StrictHostKeyChecking=no ${env.DEPLOY_HOST} 'docker compose pull && docker compose up -d'"
-    } else {
-        echo 'Deploy target not configured (set DEPLOY_HOST to enable rollout); image pushed to registry.'
+// Pull master on the deployment host and bring the stack up with the images
+// that were just built on the shared Docker daemon (tagged with BUILD_NUMBER).
+def rolloutAll() {
+    if (!env.DEPLOY_HOST) {
+        echo 'Deploy target not configured (set DEPLOY_HOST to enable rollout).'
+        return
+    }
+
+    withCredentials([sshUserPrivateKey(
+            credentialsId: 'sensa-deploy-ssh',
+            usernameVariable: 'DEPLOY_USER',
+            keyFileVariable: 'DEPLOY_KEY')]) {
+        sh """
+            ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \\
+                -i "\$DEPLOY_KEY" "\$DEPLOY_USER@${env.DEPLOY_HOST}" \\
+                "cd ${env.DEPLOY_PATH} && \\
+                 git fetch origin master && \\
+                 git reset --hard origin/master && \\
+                 IMAGE_TAG=${env.BUILD_NUMBER} docker compose up -d && \\
+                 IMAGE_TAG=${env.BUILD_NUMBER} docker compose up -d --no-deps --build rescue-panel"
+        """
     }
 }
 

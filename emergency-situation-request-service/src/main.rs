@@ -8,6 +8,7 @@ mod repository;
 
 use axum::routing::{get, patch, post};
 use axum::Router;
+use axum_prometheus::PrometheusMetricLayer;
 use config::Config;
 use handlers::AppState;
 use kafka::KafkaProducer;
@@ -46,13 +47,18 @@ async fn main() {
         config: config.clone(),
     };
 
+    let (prometheus_layer, metric_handle) = PrometheusMetricLayer::pair();
+    let metrics = metric_handle.clone();
+
     let app = Router::new()
         .route("/api/v1/emergencies", post(handlers::create_emergency))
         .route("/api/v1/emergencies", get(handlers::list_emergencies))
         .route("/api/v1/emergencies/{id}", get(handlers::get_emergency))
         .route("/api/v1/emergencies/{id}/status", patch(handlers::update_status))
         .route("/actuator/health", get(|| async { "OK" }))
-        .with_state(state);
+        .route("/metrics", get(move || { let m = metrics.clone(); async move { m.render() } }))
+        .with_state(state)
+        .layer(prometheus_layer);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], config.server_port));
     tracing::info!("Listening on {}", addr);

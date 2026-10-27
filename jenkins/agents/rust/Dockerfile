@@ -10,6 +10,7 @@ RUN apt-get update \
         git \
         curl \
         ca-certificates \
+        openssh-client \
         build-essential \
         pkg-config \
         libssl-dev \

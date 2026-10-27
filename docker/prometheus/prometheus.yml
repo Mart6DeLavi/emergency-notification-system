@@ -1,0 +1,41 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: node-exporter
+    static_configs:
+      - targets: ["node-exporter:9100"]
+
+  - job_name: cadvisor
+    static_configs:
+      - targets: ["cadvisor:8080"]
+
+  - job_name: sensa-java
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - "authentication-service:8001"
+          - "user-data-management-service:8000"
+          - "template-service:8003"
+          - "notification-service:8004"
+          - "filesystem-service:8002"
+          - "discovery-server:8761"
+        labels:
+          stack: java
+
+  - job_name: sensa-rust
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - "emergency-situation-request-service:8006"
+          - "message-delivery-service:8005"
+          - "load-balancer-service:8008"
+          - "rate-limiter-service:8009"
+          - "api-gateway:8007"
+        labels:
+          stack: rust

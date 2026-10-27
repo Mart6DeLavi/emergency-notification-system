@@ -4,6 +4,7 @@ use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::routing::get;
 use axum::{Json, Router};
+use axum_prometheus::PrometheusMetricLayer;
 use serde::Serialize;
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -62,10 +63,15 @@ async fn main() {
 
     let state = AppState { load_balancer };
 
+    let (prometheus_layer, metric_handle) = PrometheusMetricLayer::pair();
+    let metrics = metric_handle.clone();
+
     let app = Router::new()
         .route("/api/v1/instances/{service}", get(get_instance))
         .route("/actuator/health", get(health))
-        .with_state(state);
+        .route("/metrics", get(move || { let m = metrics.clone(); async move { m.render() } }))
+        .with_state(state)
+        .layer(prometheus_layer);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], config.server.port));
     tracing::info!("load-balancer-service listening on {}", addr);

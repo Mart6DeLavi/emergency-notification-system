@@ -10,6 +10,9 @@ x-eureka: &eureka
 x-kafka: &kafka
   SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
 
+x-java-opts: &java-opts
+  JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=60"
+
 services:
   # ---------------------------------------------------------------------------
   # Infrastructure
@@ -22,7 +25,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -38,7 +41,7 @@ services:
     image: mongo:7
     restart: unless-stopped
     ports:
-      - "27017:27017"
+      - "127.0.0.1:27017:27017"
     volumes:
       - mongo_data:/data/db
     healthcheck:
@@ -53,7 +56,7 @@ services:
     image: redis:7-alpine
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -71,7 +74,7 @@ services:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
     ports:
-      - "2181:2181"
+      - "127.0.0.1:2181:2181"
     networks:
       - sensa-network
 
@@ -82,8 +85,8 @@ services:
       zookeeper:
         condition: service_started
     ports:
-      - "9092:9092"
-      - "29092:29092"
+      - "127.0.0.1:9092:9092"
+      - "127.0.0.1:29092:29092"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
@@ -111,8 +114,8 @@ services:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-sensa}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-sensa}
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
@@ -125,10 +128,13 @@ services:
       - sensa-network
 
   discovery-server:
+    image: ${DOCKER_IMAGE_PREFIX:-sensa}/discovery-server:${IMAGE_TAG:-latest}
     build: ./discovery-server
     restart: unless-stopped
     ports:
-      - "8761:8761"
+      - "127.0.0.1:8761:8761"
+    environment:
+      <<: [*java-opts]
     networks:
       - sensa-network
 
@@ -136,10 +142,11 @@ services:
   # Business services
   # ---------------------------------------------------------------------------
   authentication-service:
+    image: ${DOCKER_IMAGE_PREFIX:-sensa}/authentication-service:${IMAGE_TAG:-latest}
     build: ./authentication-service
     restart: unless-stopped
     environment:
-      <<: [*postgres-credentials, *eureka, *kafka]
+      <<: [*postgres-credentials, *eureka, *kafka, *java-opts]
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/Sensa_Authentication_Service
       JWT_USER_SECRET: ${JWT_USER_SECRET:?JWT_USER_SECRET is required}
     depends_on:
@@ -153,10 +160,11 @@ services:
       - sensa-network
 
   user-data-management-service:
+    image: ${DOCKER_IMAGE_PREFIX:-sensa}/user-management-service:${IMAGE_TAG:-latest}
     build: ./user-management-service
     restart: unless-stopped
     environment:
-      <<: [*postgres-credentials, *eureka, *kafka]
+      <<: [*postgres-credentials, *eureka, *kafka, *java-opts]
       SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/Sensa_User_Data_Management_Service
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
@@ -173,10 +181,11 @@ services:
       - sensa-network
 
   template-service:
+    image: ${DOCKER_IMAGE_PREFIX:-sensa}/template-service:${IMAGE_TAG:-latest}
     build: ./template-service
     restart: unless-stopped
     environment:
-      <<: [*eureka]
+      <<: [*eureka, *java-opts]
       SPRING_DATA_MONGODB_URI: mongodb://mongo:27017/Sensa_Template_Service
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -192,10 +201,11 @@ services:
       - sensa-network
 
   notification-service:
+    image: ${DOCKER_IMAGE_PREFIX:-sensa}/notification-service:${IMAGE_TAG:-latest}
     build: ./notification-service
     restart: unless-stopped
     environment:
-      <<: [*eureka, *kafka]
+      <<: [*eureka, *kafka, *java-opts]
       SPRING_DATA_MONGODB_URI: mongodb://mongo:27017/Sensa_Notification_Service
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -220,10 +230,11 @@ services:
       - sensa-network
 
   filesystem-service:
+    image: ${DOCKER_IMAGE_PREFIX:-sensa}/filesystem-service:${IMAGE_TAG:-latest}
     build: ./filesystem-service
     restart: unless-stopped
     environment:
-      <<: [*postgres-credentials, *eureka, *kafka]
+      <<: [*postgres-credentials, *eureka, *kafka, *java-opts]
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/Sensa_File_System_Service
       JWT_USER_SECRET: ${JWT_USER_SECRET:?JWT_USER_SECRET is required}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
@@ -241,6 +252,7 @@ services:
       - sensa-network
 
   emergency-situation-request-service:
+    image: ${DOCKER_IMAGE_PREFIX:-sensa}/emergency-situation-request-service:${IMAGE_TAG:-latest}
     build: ./emergency-situation-request-service
     restart: unless-stopped
     environment:
@@ -258,6 +270,7 @@ services:
       - sensa-network
 
   message-delivery-service:
+    image: ${DOCKER_IMAGE_PREFIX:-sensa}/message-delivery-service:${IMAGE_TAG:-latest}
     build: ./message-delivery-service
     restart: unless-stopped
     environment:
@@ -286,6 +299,7 @@ services:
   # Infrastructure services (custom load-balancer / rate-limiter / gateway)
   # ---------------------------------------------------------------------------
   rate-limiter-service:
+    image: ${DOCKER_IMAGE_PREFIX:-sensa}/rate-limiter-service:${IMAGE_TAG:-latest}
     build: ./rate-limiter-service
     restart: unless-stopped
     environment:
@@ -300,6 +314,7 @@ services:
       - sensa-network
 
   load-balancer-service:
+    image: ${DOCKER_IMAGE_PREFIX:-sensa}/load-balancer-service:${IMAGE_TAG:-latest}
     build: ./load-balancer-service
     restart: unless-stopped
     environment:
@@ -311,10 +326,11 @@ services:
       - sensa-network
 
   api-gateway:
+    image: ${DOCKER_IMAGE_PREFIX:-sensa}/api-gateway:${IMAGE_TAG:-latest}
     build: ./api-gateway
     restart: unless-stopped
     ports:
-      - "8080:8007"
+      - "127.0.0.1:8080:8007"
     environment:
       CONFIG_PATH: /app/config.yaml
       RUST_LOG: ${RUST_LOG:-info}
@@ -330,10 +346,11 @@ services:
   # Frontend
   # ---------------------------------------------------------------------------
   rescue-panel:
+    image: ${DOCKER_IMAGE_PREFIX:-sensa}/rescue-panel:latest
     build: ./rescue-panel
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     environment:
       NUXT_PUBLIC_API_BASE: ${NUXT_PUBLIC_API_BASE:-http://localhost:8080}
     depends_on:
@@ -341,12 +358,145 @@ services:
     networks:
       - sensa-network
 
+  # ---------------------------------------------------------------------------
+  # Reverse proxy / TLS
+  # ---------------------------------------------------------------------------
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    env_file:
+      - .env
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api-gateway
+      - rescue-panel
+      - grafana
+    networks:
+      - sensa-network
+      - sensa-proxy
+
+  # ---------------------------------------------------------------------------
+  # Monitoring
+  # ---------------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-15d}
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    networks:
+      - sensa-network
+
+  loki:
+    image: grafana/loki:3.2.1
+    restart: unless-stopped
+    command: -config.file=/etc/loki/loki.yml
+    volumes:
+      - ./docker/loki/loki.yml:/etc/loki/loki.yml:ro
+      - loki_data:/loki
+    ports:
+      - "127.0.0.1:3100:3100"
+    networks:
+      - sensa-network
+
+  alloy:
+    image: grafana/alloy:v1.5.1
+    restart: unless-stopped
+    command:
+      - run
+      - /etc/alloy/config.alloy
+      - --storage.path=/var/lib/alloy/data
+    volumes:
+      - ./docker/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - alloy_data:/var/lib/alloy/data
+    depends_on:
+      - loki
+    networks:
+      - sensa-network
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_SERVER_ROOT_URL: https://${GRAFANA_DOMAIN:-grafana.localhost}
+      GF_SERVER_DOMAIN: ${GRAFANA_DOMAIN:-grafana.localhost}
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+    volumes:
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "127.0.0.1:3001:3000"
+    depends_on:
+      - prometheus
+      - loki
+    networks:
+      - sensa-network
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    restart: unless-stopped
+    privileged: true
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    devices:
+      - /dev/kmsg
+    networks:
+      - sensa-network
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    restart: unless-stopped
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --path.rootfs=/rootfs
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($|/)
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    networks:
+      - sensa-network
+
 networks:
   sensa-network:
     driver: bridge
+  sensa-proxy:
+    external: true
 
 volumes:
   pg_data:
   mongo_data:
   redis_data:
   rabbitmq_data:
+  prometheus_data:
+  grafana_data:
+  loki_data:
+  alloy_data:
+  caddy_data:
+  caddy_config:

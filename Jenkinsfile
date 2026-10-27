@@ -12,7 +12,8 @@
 env.DOCKER_IMAGE_PREFIX = env.DOCKER_IMAGE_PREFIX ?: 'sensa'
 env.NOTIFY_ENABLED = env.NOTIFY_ENABLED ?: 'false'
 env.NOTIFY_EMAIL_RECIPIENTS = env.NOTIFY_EMAIL_RECIPIENTS ?: ''
-env.DEPLOY_HOST = env.DEPLOY_HOST ?: ''
+env.DEPLOY_HOST = env.DEPLOY_HOST ?: 'host.docker.internal'
+env.DEPLOY_PATH = env.DEPLOY_PATH ?: '/opt/sensa'
 
 // Bootstrap on any node: checkout once to read the central service list.
 def labels = [:]
@@ -45,6 +46,18 @@ try {
             }]
         }
         parallel branches
+    }
+
+    stage('Rollout') {
+        node('rust') {
+            checkout scm
+            try {
+                def ci = load 'jenkins/ci.groovy'
+                ci.rolloutAll()
+            } finally {
+                cleanWs()
+            }
+        }
     }
 } finally {
     node {

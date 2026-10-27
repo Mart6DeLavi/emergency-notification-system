@@ -1,0 +1,28 @@
+{
+    email {$ACME_EMAIL}
+}
+
+# Rescue-services web panel + API (same origin).
+{$PANEL_DOMAIN} {
+    handle /api/* {
+        reverse_proxy api-gateway:8007
+    }
+    handle {
+        reverse_proxy rescue-panel:3000
+    }
+}
+
+# Jenkins (separate compose project, joined to the shared proxy network).
+{$JENKINS_DOMAIN} {
+    reverse_proxy jenkins:8080
+}
+
+# Grafana (metrics + logs).
+{$GRAFANA_DOMAIN} {
+    reverse_proxy grafana:3000
+}
+
+# Apex redirects to the panel.
+{$BASE_DOMAIN}, www.{$BASE_DOMAIN} {
+    redir https://{$PANEL_DOMAIN}{uri} permanent
+}

@@ -9,6 +9,7 @@ load_balancer:
 
 cors:
   allowed_origins:
+    - "https://panel.sensanotify.com"
     - "http://localhost:3000"
 
 routes:

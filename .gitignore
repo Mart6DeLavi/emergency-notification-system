@@ -20,3 +20,6 @@ notification-service2/
 .env
 .env.*
 !.env.example
+
+# Kotlin compiler caches
+.kotlin/
