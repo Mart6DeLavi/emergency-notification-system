@@ -38,3 +38,15 @@ springdoc:
 jwt:
   secret: ${JWT_USER_SECRET:change-me}
   lifetime: 24h
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    prometheus:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}

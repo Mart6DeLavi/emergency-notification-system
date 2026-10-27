@@ -5,6 +5,7 @@ use axum::http::{HeaderMap, HeaderValue, Request, StatusCode};
 use axum::response::Response;
 use axum::routing::{any, get};
 use axum::{Json, Router};
+use axum_prometheus::PrometheusMetricLayer;
 use futures_util::StreamExt;
 use serde::Deserialize;
 use serde::Serialize;
@@ -242,12 +243,16 @@ async fn main() {
 
     let port = config.server.port;
     let cors = build_cors(&config);
+    let (prometheus_layer, metric_handle) = PrometheusMetricLayer::pair();
+    let metrics = metric_handle.clone();
     let state = AppState { config };
 
     let app = Router::new()
         .route("/actuator/health", get(health))
+        .route("/metrics", get(move || { let m = metrics.clone(); async move { m.render() } }))
         .fallback(any(proxy))
         .layer(cors)
+        .layer(prometheus_layer)
         .with_state(state);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], port));

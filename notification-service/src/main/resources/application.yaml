@@ -46,3 +46,15 @@ services:
     url: http://localhost:8003
   user-data-management-service:
     url: http://localhost:8000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    prometheus:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}

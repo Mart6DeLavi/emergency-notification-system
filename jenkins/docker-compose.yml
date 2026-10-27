@@ -1,21 +1,22 @@
-version: '3.8'
-
 services:
   jenkins:
     image: jenkins/jenkins:lts-jdk21
     container_name: sensa-jenkins
     restart: always
     ports:
-      - '8081:8080'
-      - '50000:50000'
+      - '127.0.0.1:8081:8080'
     volumes:
       - jenkins_home:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
-      JENKINS_OPTS: --prefix=/jenkins
-      JAVA_OPTS: -Djenkins.install.runSetupWizard=false
+      JENKINS_URL: http://jenkins:8080
+    group_add:
+      - "${DOCKER_GID:-988}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - sensa-jenkins-net
+      - sensa-proxy
 
   jenkins-agent-gradle:
     build: ./agents/gradle
@@ -30,6 +31,10 @@ services:
       JENKINS_SECRET: ${JENKINS_AGENT_GRADLE_SECRET}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+    group_add:
+      - "${DOCKER_GID:-988}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - sensa-jenkins-net
 
@@ -46,12 +51,18 @@ services:
       JENKINS_SECRET: ${JENKINS_AGENT_RUST_SECRET}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+    group_add:
+      - "${DOCKER_GID:-988}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - sensa-jenkins-net
 
 networks:
   sensa-jenkins-net:
     driver: bridge
+  sensa-proxy:
+    external: true
 
 volumes:
   jenkins_home:

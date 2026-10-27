@@ -10,6 +10,7 @@ RUN apt-get update \
         curl \
         ca-certificates \
         unzip \
+        openssh-client \
     && rm -rf /var/lib/apt/lists/*
 
 USER jenkins

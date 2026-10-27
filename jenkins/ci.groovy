@@ -30,6 +30,10 @@ def deploy(String service) {
     deployScript.deploy(service)
 }
 
+def rolloutAll() {
+    deployScript.rolloutAll()
+}
+
 def notify(String result) {
     notifyScript.notify(result)
 }

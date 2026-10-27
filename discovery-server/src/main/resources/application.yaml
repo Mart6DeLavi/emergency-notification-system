@@ -14,3 +14,15 @@ eureka:
   server:
     enable-self-preservation: false  # (Отключаем "самозащиту", чтобы сразу удалять неактивные сервисы)
     eviction-interval-timer-in-ms: 5000  # (Чистим мертвые инстансы каждые 5 секунд)
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    prometheus:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}

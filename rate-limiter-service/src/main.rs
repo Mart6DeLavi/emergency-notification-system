@@ -3,6 +3,7 @@ use crate::config::Config;
 use axum::extract::State;
 use axum::routing::{get, post};
 use axum::{Json, Router};
+use axum_prometheus::PrometheusMetricLayer;
 use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -58,10 +59,15 @@ async fn main() {
     let port = config.server.port;
     let state = AppState { config, bucket };
 
+    let (prometheus_layer, metric_handle) = PrometheusMetricLayer::pair();
+    let metrics = metric_handle.clone();
+
     let app = Router::new()
         .route("/api/v1/check", post(check))
         .route("/actuator/health", get(health))
-        .with_state(state);
+        .route("/metrics", get(move || { let m = metrics.clone(); async move { m.render() } }))
+        .with_state(state)
+        .layer(prometheus_layer);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
     tracing::info!("rate-limiter-service listening on {}", addr);
