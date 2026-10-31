@@ -25,7 +25,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
-      - "127.0.0.1:5432:5432"
+      - "${SENSA_BIND_IP:-127.0.0.1}:5432:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -41,7 +41,7 @@ services:
     image: mongo:7
     restart: unless-stopped
     ports:
-      - "127.0.0.1:27017:27017"
+      - "${SENSA_BIND_IP:-127.0.0.1}:27017:27017"
     volumes:
       - mongo_data:/data/db
     healthcheck:
@@ -56,7 +56,7 @@ services:
     image: redis:7-alpine
     restart: unless-stopped
     ports:
-      - "127.0.0.1:6379:6379"
+      - "${SENSA_BIND_IP:-127.0.0.1}:6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -85,14 +85,14 @@ services:
       zookeeper:
         condition: service_started
     ports:
-      - "127.0.0.1:9092:9092"
-      - "127.0.0.1:29092:29092"
+      - "${SENSA_BIND_IP:-127.0.0.1}:9092:9092"
+      - "${SENSA_BIND_IP:-127.0.0.1}:29092:29092"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:29092
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://${KAFKA_ADVERTISED_HOST:-localhost}:29092
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
@@ -163,6 +163,8 @@ services:
     image: ${DOCKER_IMAGE_PREFIX:-sensa}/user-management-service:${IMAGE_TAG:-latest}
     build: ./user-management-service
     restart: unless-stopped
+    ports:
+      - "${SENSA_BIND_IP:-127.0.0.1}:8000:8000"
     environment:
       <<: [*postgres-credentials, *eureka, *kafka, *java-opts]
       SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/Sensa_User_Data_Management_Service
@@ -204,6 +206,8 @@ services:
     image: ${DOCKER_IMAGE_PREFIX:-sensa}/notification-service:${IMAGE_TAG:-latest}
     build: ./notification-service
     restart: unless-stopped
+    ports:
+      - "${SENSA_BIND_IP:-127.0.0.1}:8004:8004"
     environment:
       <<: [*eureka, *kafka, *java-opts]
       SPRING_DATA_MONGODB_URI: mongodb://mongo:27017/Sensa_Notification_Service
@@ -233,6 +237,8 @@ services:
     image: ${DOCKER_IMAGE_PREFIX:-sensa}/filesystem-service:${IMAGE_TAG:-latest}
     build: ./filesystem-service
     restart: unless-stopped
+    ports:
+      - "${SENSA_BIND_IP:-127.0.0.1}:8002:8002"
     environment:
       <<: [*postgres-credentials, *eureka, *kafka, *java-opts]
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/Sensa_File_System_Service
@@ -364,6 +370,8 @@ services:
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "80:80"
       - "443:443"

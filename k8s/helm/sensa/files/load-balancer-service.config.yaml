@@ -1,0 +1,25 @@
+server:
+  port: 8008
+
+# Services that run inside the cluster are addressed by their Kubernetes
+# Service DNS name. Services that stay in Docker Compose are reached through
+# the node's public IP (`external.host`).
+services:
+  authentication-service:
+    - host: authentication-service
+      port: 8001
+  template-service:
+    - host: template-service
+      port: 8003
+  emergency-situation-request-service:
+    - host: emergency-situation-request-service
+      port: 8006
+  user-data-management-service:
+    - host: {{ .Values.external.host }}
+      port: 8000
+  notification-service:
+    - host: {{ .Values.external.host }}
+      port: 8004
+  filesystem-service:
+    - host: {{ .Values.external.host }}
+      port: 8002

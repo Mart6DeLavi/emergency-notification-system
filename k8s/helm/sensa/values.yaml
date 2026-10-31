@@ -1,0 +1,173 @@
+# Default values for the SENSA Kubernetes slice.
+#
+# Only stateless services run in the cluster. Stateful infrastructure
+# (PostgreSQL, MongoDB, Redis, Kafka, RabbitMQ) stays in Docker Compose and is
+# reached through `external.host` (the node's public IP).
+
+global:
+  # Images are built by Jenkins / Docker Compose as `sensa/<service>:<tag>`
+  # and imported into the k3s containerd store, so no registry is required.
+  imageRegistry: sensa
+  imageTag: latest
+  imagePullPolicy: Never
+
+ingress:
+  enabled: true
+  className: traefik
+  # Public hostname served by the host Caddy, which proxies to Traefik NodePort.
+  host: k8s.sensanotify.com
+  # TLS is terminated by the host Caddy (Let's Encrypt). Leave empty.
+  tlsSecret: ""
+  annotations: {}
+
+certManager:
+  enabled: false
+  acme:
+    email: azmater59034@gmail.com
+    server: https://acme-v02.api.letsencrypt.org/directory
+    ingressClass: traefik
+
+# Host-reachable stateful services (Docker Compose on the same machine).
+external:
+  host: 169.58.188.177
+  postgres:
+    port: 5432
+  mongo:
+    port: 27017
+  redis:
+    port: 6379
+  kafka:
+    port: 29092
+
+secrets:
+  jwtSecret: change-me-to-a-long-random-secret-at-least-32-bytes
+  postgresUsername: postgres
+  postgresPassword: postgres
+
+services:
+  rescue-panel:
+    enabled: true
+    image: rescue-panel
+    port: 3000
+    replicas: 1
+    readinessPath: /
+    env:
+      NUXT_PUBLIC_API_BASE: "https://{{ .Values.ingress.host }}"
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "128Mi"
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+
+  api-gateway:
+    enabled: true
+    image: api-gateway
+    port: 8007
+    replicas: 1
+    configMap: api-gateway-config
+    readinessPath: /actuator/health
+    env: {}
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "64Mi"
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+    autoscaling:
+      enabled: true
+      minReplicas: 1
+      maxReplicas: 3
+      targetCPUUtilizationPercentage: 70
+
+  load-balancer-service:
+    enabled: true
+    image: load-balancer-service
+    port: 8008
+    replicas: 1
+    configMap: load-balancer-config
+    readinessPath: /actuator/health
+    env: {}
+    resources:
+      requests:
+        cpu: "25m"
+        memory: "32Mi"
+      limits:
+        cpu: "250m"
+        memory: "128Mi"
+
+  rate-limiter-service:
+    enabled: true
+    image: rate-limiter-service
+    port: 8009
+    replicas: 1
+    configMap: rate-limiter-config
+    readinessPath: /actuator/health
+    env: {}
+    resources:
+      requests:
+        cpu: "25m"
+        memory: "32Mi"
+      limits:
+        cpu: "250m"
+        memory: "128Mi"
+
+  authentication-service:
+    enabled: true
+    image: authentication-service
+    port: 8001
+    replicas: 1
+    readinessPath: /actuator/health
+    env:
+      EUREKA_CLIENT_ENABLED: "false"
+      SPRING_CLOUD_DISCOVERY_ENABLED: "false"
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: "{{ .Values.external.host }}:{{ .Values.external.kafka.port }}"
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://{{ .Values.external.host }}:{{ .Values.external.postgres.port }}/Sensa_Authentication_Service"
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+      limits:
+        cpu: "1000m"
+        memory: "768Mi"
+
+  emergency-situation-request-service:
+    enabled: true
+    image: emergency-situation-request-service
+    port: 8006
+    replicas: 1
+    readinessPath: /actuator/health
+    env:
+      DATABASE_URL: "postgres://$(POSTGRES_USERNAME):$(POSTGRES_PASSWORD)@{{ .Values.external.host }}:{{ .Values.external.postgres.port }}/Sensa_Emergency_Service"
+      KAFKA_BROKERS: "{{ .Values.external.host }}:{{ .Values.external.kafka.port }}"
+      SERVER_PORT: "8006"
+      RUST_LOG: "info"
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "64Mi"
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+
+  template-service:
+    enabled: true
+    image: template-service
+    port: 8003
+    replicas: 1
+    readinessPath: /actuator/health
+    env:
+      EUREKA_CLIENT_ENABLED: "false"
+      SPRING_CLOUD_DISCOVERY_ENABLED: "false"
+      SPRING_DATA_MONGODB_URI: "mongodb://{{ .Values.external.host }}:{{ .Values.external.mongo.port }}/Sensa_Template_Service"
+      REDIS_HOST: "{{ .Values.external.host }}"
+      REDIS_PORT: "{{ .Values.external.redis.port }}"
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+      limits:
+        cpu: "1000m"
+        memory: "768Mi"

@@ -22,6 +22,11 @@
     reverse_proxy grafana:3000
 }
 
+# Kubernetes demo slice (k3s via Traefik NodePort).
+{$K8S_DOMAIN} {
+    reverse_proxy host.docker.internal:30080
+}
+
 # Apex redirects to the panel.
 {$BASE_DOMAIN}, www.{$BASE_DOMAIN} {
     redir https://{$PANEL_DOMAIN}{uri} permanent
