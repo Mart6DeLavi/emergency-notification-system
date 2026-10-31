@@ -2,47 +2,55 @@
 //
 // The root Jenkinsfile only needs:
 //   def ci = load 'jenkins/ci.groovy'
-// and then calls ci.quality|build|security|deploy|notify('<service>').
+// and then calls ci.quality|build|security|deploy('<service>') plus
+// ci.rolloutAll() and ci.notify(result).
 //
 // Each stage lives in its own file under jenkins/vars/ so that changes to a
 // single stage are easy to introduce without touching the others.
-
-def services = load 'jenkins/services.groovy'
-def qualityScript = load 'jenkins/vars/quality.groovy'
-def buildScript = load 'jenkins/vars/build.groovy'
-def securityScript = load 'jenkins/vars/security.groovy'
-def deployScript = load 'jenkins/vars/deploy.groovy'
-def notifyScript = load 'jenkins/vars/notify.groovy'
+//
+// NOTE: loaded scripts are fetched inside each method on purpose. Top-level
+// `def` variables in a loaded Groovy script are locals of run() and are not
+// visible from methods, which produced MissingPropertyException in build #1.
 
 def quality(String service) {
-    qualityScript.quality(service, services.typeOf(service))
+    def services = load 'jenkins/services.groovy'
+    def stage = load 'jenkins/vars/quality.groovy'
+    stage.quality(service, services.typeOf(service))
 }
 
 def build(String service) {
-    buildScript.build(service, services.typeOf(service))
+    def services = load 'jenkins/services.groovy'
+    def stage = load 'jenkins/vars/build.groovy'
+    stage.build(service, services.typeOf(service))
 }
 
 def security(String service) {
-    securityScript.security(service)
+    def stage = load 'jenkins/vars/security.groovy'
+    stage.security(service)
 }
 
 def deploy(String service) {
-    deployScript.deploy(service)
+    def stage = load 'jenkins/vars/deploy.groovy'
+    stage.deploy(service)
 }
 
 def rolloutAll() {
-    deployScript.rolloutAll()
+    def stage = load 'jenkins/vars/deploy.groovy'
+    stage.rolloutAll()
 }
 
 def notify(String result) {
-    notifyScript.notify(result)
+    def stage = load 'jenkins/vars/notify.groovy'
+    stage.notify(result)
 }
 
 def allServices() {
+    def services = load 'jenkins/services.groovy'
     return services.allServices()
 }
 
 def agentLabel(String service) {
+    def services = load 'jenkins/services.groovy'
     return services.agentLabel(service)
 }
 
