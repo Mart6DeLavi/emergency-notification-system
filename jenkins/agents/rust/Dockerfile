@@ -13,7 +13,11 @@ RUN apt-get update \
         build-essential \
         pkg-config \
         libssl-dev \
-        librdkafka-dev \
+        cmake \
+        libsasl2-dev \
+        libzstd-dev \
+        libcurl4-openssl-dev \
+        zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Docker CLI only. The Debian `docker.io` package ships the daemon, not the
