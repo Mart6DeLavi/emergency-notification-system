@@ -23,3 +23,7 @@ notification-service2/
 
 # Kotlin compiler caches
 .kotlin/
+
+# Local screenshots (not part of the repo)
+/img.png
+/img_1.png
