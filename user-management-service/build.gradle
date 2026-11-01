@@ -20,15 +20,7 @@ repositories {
 ext {
     set('springCloudVersion', "2025.0.0")
     set('postgresql.version', '42.7.11')
-    set('bouncycastle.version', '1.85')
-    set('tomcat.version', '10.1.59')
-    set('spring-framework.version', '6.2.19')
-    set('spring-data-bom.version', '3.5.12')
-    set('spring-kafka.version', '3.3.16')
-    set('jackson-bom.version', '2.18.11')
-    set('micrometer.version', '1.15.12')
-    set('netty.version', '4.1.137.Final')
-    set('httpclient5.version', '5.4.3')
+    set('bouncycastle.version', '1.82')
 }
 
 
@@ -107,12 +99,5 @@ configurations.all {
         force 'com.thoughtworks.xstream:xstream:1.4.21'
         force 'org.xerial.snappy:snappy-java:1.1.10.9'
         force 'org.lz4:lz4-java:1.8.1'
-    }
-}
-
-configurations.all {
-    resolutionStrategy {
-        force 'org.apache.httpcomponents.core5:httpcore5:5.4.3'
-        force 'org.apache.httpcomponents.core5:httpcore5-h2:5.4.3'
     }
 }

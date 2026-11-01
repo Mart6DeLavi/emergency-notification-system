@@ -23,15 +23,7 @@ repositories {
 
 extra["springCloudVersion"] = "2025.0.0"
     extra["postgresql.version"] = "42.7.11"
-    extra["bouncycastle.version"] = "1.85"
-    extra["tomcat.version"] = "10.1.59"
-    extra["spring-framework.version"] = "6.2.19"
-    extra["spring-data-bom.version"] = "3.5.12"
-    extra["spring-kafka.version"] = "3.3.16"
-    extra["jackson-bom.version"] = "2.18.11"
-    extra["micrometer.version"] = "1.15.12"
-    extra["netty.version"] = "4.1.137.Final"
-    extra["httpclient5.version"] = "5.4.3"
+    extra["bouncycastle.version"] = "1.82"
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
@@ -96,12 +88,5 @@ configurations.all {
         force("com.thoughtworks.xstream:xstream:1.4.21")
         force("org.xerial.snappy:snappy-java:1.1.10.9")
         force("org.lz4:lz4-java:1.8.1")
-    }
-}
-
-configurations.all {
-    resolutionStrategy {
-        force("org.apache.httpcomponents.core5:httpcore5:5.4.3")
-        force("org.apache.httpcomponents.core5:httpcore5-h2:5.4.3")
     }
 }
