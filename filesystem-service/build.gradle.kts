@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    id("org.springframework.boot") version "3.4.5"
+    id("org.springframework.boot") version "3.5.14"
     id("io.spring.dependency-management") version "1.1.7"
     kotlin("jvm") version "2.0.21"
     kotlin("plugin.spring") version "2.0.21"
@@ -21,16 +21,9 @@ repositories {
     mavenCentral()
 }
 
-extra["springCloudVersion"] = "2024.0.0"
-    extra["netty.version"] = "4.1.133.Final"
-    extra["spring-security.version"] = "6.4.6"
-    extra["spring-framework.version"] = "6.2.11"
-    extra["jackson-bom.version"] = "2.18.11"
-    extra["bouncycastle.version"] = "1.80.2"
-    extra["kafka.version"] = "3.9.2"
-    extra["spring-kafka.version"] = "3.3.16"
-    extra["httpclient5.version"] = "5.4.3"
-    extra["micrometer.version"] = "1.15.12"
+extra["springCloudVersion"] = "2025.0.0"
+    extra["postgresql.version"] = "42.7.11"
+    extra["bouncycastle.version"] = "1.82"
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
