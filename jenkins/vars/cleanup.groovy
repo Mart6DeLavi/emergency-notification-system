@@ -15,12 +15,13 @@ def interruptStalePlaceholders() {
     def interrupted = []
     Jenkins.get().computers.each { computer ->
         computer.executors.each { executor ->
-            if (executor.isBusy()) {
-                def executable = executor.getCurrentExecutable()
+            hudson.model.Executor ex = (hudson.model.Executor) executor
+            if (ex.isBusy()) {
+                def executable = ex.getCurrentExecutable()
                 def className = executable?.getClass()?.getName() ?: ''
                 if (className.contains('PlaceholderTask')) {
-                    interrupted << "${computer.getDisplayName()}/${executor.getNumber()}: ${executable}"
-                    executor.interrupt()
+                    interrupted << "${computer.getDisplayName()}/${ex.getNumber()}: ${executable}"
+                    ex.interrupt()
                 }
             }
         }
