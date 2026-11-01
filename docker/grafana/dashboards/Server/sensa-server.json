@@ -646,11 +646,149 @@
       "panels": []
     },
     {
+      "title": "Disk total",
+      "type": "stat",
+      "gridPos": {
+        "x": 0,
+        "y": 27,
+        "w": 8,
+        "h": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max(node_filesystem_size_bytes{mountpoint=\"/\"})",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "total"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "decbytes",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "description": "Total size of the root filesystem in gigabytes"
+    },
+    {
+      "title": "Disk used",
+      "type": "stat",
+      "gridPos": {
+        "x": 8,
+        "y": 27,
+        "w": 8,
+        "h": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max(node_filesystem_size_bytes{mountpoint=\"/\"}) - max(node_filesystem_free_bytes{mountpoint=\"/\"})",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "used"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "decbytes",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "description": "Space used on the root filesystem in gigabytes"
+    },
+    {
+      "title": "Disk free",
+      "type": "stat",
+      "gridPos": {
+        "x": 16,
+        "y": 27,
+        "w": 8,
+        "h": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max(node_filesystem_avail_bytes{mountpoint=\"/\"})",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "free"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "decbytes",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "description": "Space available on the root filesystem in gigabytes"
+    },
+    {
       "title": "Disk usage by mount",
       "type": "timeseries",
       "gridPos": {
         "x": 0,
-        "y": 27,
+        "y": 31,
         "w": 12,
         "h": 8
       },
@@ -693,7 +831,7 @@
       "type": "timeseries",
       "gridPos": {
         "x": 12,
-        "y": 27,
+        "y": 31,
         "w": 12,
         "h": 8
       },
@@ -736,7 +874,7 @@
       "type": "timeseries",
       "gridPos": {
         "x": 0,
-        "y": 35,
+        "y": 39,
         "w": 12,
         "h": 8
       },
@@ -779,7 +917,7 @@
       "type": "timeseries",
       "gridPos": {
         "x": 12,
-        "y": 35,
+        "y": 39,
         "w": 12,
         "h": 8
       },
@@ -831,7 +969,7 @@
       "type": "timeseries",
       "gridPos": {
         "x": 0,
-        "y": 43,
+        "y": 47,
         "w": 12,
         "h": 8
       },
@@ -883,7 +1021,7 @@
       "type": "timeseries",
       "gridPos": {
         "x": 12,
-        "y": 43,
+        "y": 47,
         "w": 12,
         "h": 8
       },
@@ -936,7 +1074,7 @@
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 51,
+        "y": 55,
         "w": 24,
         "h": 1
       },
@@ -947,7 +1085,7 @@
       "type": "timeseries",
       "gridPos": {
         "x": 0,
-        "y": 52,
+        "y": 56,
         "w": 12,
         "h": 8
       },
@@ -999,7 +1137,7 @@
       "type": "timeseries",
       "gridPos": {
         "x": 12,
-        "y": 52,
+        "y": 56,
         "w": 12,
         "h": 8
       },
@@ -1070,7 +1208,7 @@
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 60,
+        "y": 64,
         "w": 24,
         "h": 1
       },
@@ -1081,7 +1219,7 @@
       "type": "stat",
       "gridPos": {
         "x": 0,
-        "y": 61,
+        "y": 65,
         "w": 6,
         "h": 4
       },
@@ -1126,7 +1264,7 @@
       "type": "stat",
       "gridPos": {
         "x": 6,
-        "y": 61,
+        "y": 65,
         "w": 6,
         "h": 4
       },
@@ -1171,7 +1309,7 @@
       "type": "stat",
       "gridPos": {
         "x": 12,
-        "y": 61,
+        "y": 65,
         "w": 6,
         "h": 4
       },
@@ -1216,7 +1354,7 @@
       "type": "stat",
       "gridPos": {
         "x": 18,
-        "y": 61,
+        "y": 65,
         "w": 6,
         "h": 4
       },
@@ -1261,7 +1399,7 @@
       "type": "timeseries",
       "gridPos": {
         "x": 0,
-        "y": 65,
+        "y": 69,
         "w": 12,
         "h": 8
       },
@@ -1313,7 +1451,7 @@
       "type": "timeseries",
       "gridPos": {
         "x": 12,
-        "y": 65,
+        "y": 69,
         "w": 12,
         "h": 8
       },
