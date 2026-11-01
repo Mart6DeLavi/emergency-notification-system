@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    id("org.springframework.boot") version "3.4.1"
+    id("org.springframework.boot") version "3.5.14"
     id("io.spring.dependency-management") version "1.1.7"
     kotlin("jvm") version "2.0.21"
     kotlin("plugin.spring") version "2.0.21"
@@ -20,7 +20,9 @@ repositories {
     mavenCentral()
 }
 
-extra["springCloudVersion"] = "2024.0.0"
+extra["springCloudVersion"] = "2025.0.0"
+    extra["postgresql.version"] = "42.7.11"
+    extra["bouncycastle.version"] = "1.82"
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
@@ -65,4 +67,13 @@ tasks.withType<KotlinCompile> {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+configurations.all {
+    resolutionStrategy {
+        force("com.google.guava:guava:33.7.2-jre")
+        force("com.thoughtworks.xstream:xstream:1.4.21")
+        force("org.xerial.snappy:snappy-java:1.1.10.9")
+        force("org.lz4:lz4-java:1.8.1")
+    }
 }
