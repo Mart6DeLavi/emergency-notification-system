@@ -44,6 +44,11 @@ def notify(String result) {
     stage.notify(result)
 }
 
+def cleanup() {
+    def stage = load 'jenkins/vars/cleanup.groovy'
+    stage.cleanup()
+}
+
 def allServices() {
     def services = load 'jenkins/services.groovy'
     return services.allServices()
