@@ -41,7 +41,7 @@ def target(expr, legend=None, ref="A", ds=None):
     return item
 
 
-def panel(title, kind, x, y, w, h, targets, unit=None, options=None, description=""):
+def panel(title, kind, x, y, w, h, targets, unit=None, options=None, description="", decimals=None):
     item = {
         "title": title,
         "type": kind,
@@ -54,6 +54,8 @@ def panel(title, kind, x, y, w, h, targets, unit=None, options=None, description
     }
     if unit:
         item["fieldConfig"]["defaults"]["unit"] = unit
+    if decimals is not None:
+        item["fieldConfig"]["defaults"]["decimals"] = decimals
     if kind == "timeseries":
         item["options"].setdefault(
             "legend", {"displayMode": "list", "placement": "bottom", "showLegend": True}
@@ -283,6 +285,52 @@ def build_server():
 
     p.append(row("Disk", y))
     y += 1
+    p.extend(
+        [
+            panel(
+                "Disk total",
+                "stat",
+                0,
+                y,
+                8,
+                4,
+                [target('max(node_filesystem_size_bytes{mountpoint="/"})', "total")],
+                "decbytes",
+                decimals=1,
+                description="Total size of the root filesystem in gigabytes",
+            ),
+            panel(
+                "Disk used",
+                "stat",
+                8,
+                y,
+                8,
+                4,
+                [
+                    target(
+                        'max(node_filesystem_size_bytes{mountpoint="/"}) - max(node_filesystem_free_bytes{mountpoint="/"})',
+                        "used",
+                    )
+                ],
+                "decbytes",
+                decimals=1,
+                description="Space used on the root filesystem in gigabytes",
+            ),
+            panel(
+                "Disk free",
+                "stat",
+                16,
+                y,
+                8,
+                4,
+                [target('max(node_filesystem_avail_bytes{mountpoint="/"})', "free")],
+                "decbytes",
+                decimals=1,
+                description="Space available on the root filesystem in gigabytes",
+            ),
+        ]
+    )
+    y += 4
     filesystem_filter = 'fstype!~"tmpfs|overlay|squashfs"'
     p.append(
         panel(
