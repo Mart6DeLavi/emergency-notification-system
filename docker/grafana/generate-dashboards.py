@@ -41,7 +41,22 @@ def target(expr, legend=None, ref="A", ds=None):
     return item
 
 
-def panel(title, kind, x, y, w, h, targets, unit=None, options=None, description="", decimals=None):
+def panel(
+    title,
+    kind,
+    x,
+    y,
+    w,
+    h,
+    targets,
+    unit=None,
+    options=None,
+    description="",
+    decimals=None,
+    thresholds=None,
+    color_mode=None,
+    fixed_color=None,
+):
     item = {
         "title": title,
         "type": kind,
@@ -65,7 +80,13 @@ def panel(title, kind, x, y, w, h, targets, unit=None, options=None, description
         item["options"].setdefault(
             "reduceOptions", {"calcs": ["lastNotNull"], "fields": "", "values": False}
         )
-        item["options"].setdefault("colorMode", "value")
+        item["options"]["colorMode"] = color_mode or "value"
+        item["fieldConfig"]["defaults"]["thresholds"] = {
+            "mode": "absolute",
+            "steps": thresholds or [{"color": "green", "value": None}],
+        }
+        if fixed_color:
+            item["fieldConfig"]["defaults"]["color"] = {"mode": "fixed", "fixedColor": fixed_color}
         item["options"].setdefault("graphMode", "area")
         item["options"].setdefault("justifyMode", "auto")
         item["options"].setdefault("orientation", "auto")
@@ -136,6 +157,11 @@ def build_server():
                 4,
                 [target('100 - avg(irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100', "CPU %")],
                 "percent",
+                thresholds=[
+                    {"color": "green", "value": None},
+                    {"color": "yellow", "value": 70},
+                    {"color": "red", "value": 85},
+                ],
             ),
             panel(
                 "Load average",
@@ -160,6 +186,11 @@ def build_server():
                 4,
                 [target('avg(irate(node_cpu_seconds_total{mode="iowait"}[5m])) * 100', "iowait %")],
                 "percent",
+                thresholds=[
+                    {"color": "green", "value": None},
+                    {"color": "yellow", "value": 5},
+                    {"color": "red", "value": 15},
+                ],
             ),
             panel(
                 "CPU cores",
@@ -218,6 +249,11 @@ def build_server():
                 4,
                 [target("(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100", "used %")],
                 "percent",
+                thresholds=[
+                    {"color": "green", "value": None},
+                    {"color": "yellow", "value": 70},
+                    {"color": "red", "value": 85},
+                ],
             ),
             panel(
                 "Memory total",
@@ -297,6 +333,8 @@ def build_server():
                 [target('max(node_filesystem_size_bytes{mountpoint="/"})', "total")],
                 "decbytes",
                 decimals=1,
+                color_mode="fixed",
+                fixed_color="green",
                 description="Total size of the root filesystem in gigabytes",
             ),
             panel(
@@ -314,6 +352,8 @@ def build_server():
                 ],
                 "decbytes",
                 decimals=1,
+                color_mode="fixed",
+                fixed_color="green",
                 description="Space used on the root filesystem in gigabytes",
             ),
             panel(
@@ -326,6 +366,8 @@ def build_server():
                 [target('max(node_filesystem_avail_bytes{mountpoint="/"})', "free")],
                 "decbytes",
                 decimals=1,
+                color_mode="fixed",
+                fixed_color="green",
                 description="Space available on the root filesystem in gigabytes",
             ),
         ]
