@@ -687,7 +687,7 @@ def build_services_overview():
                 y,
                 6,
                 4,
-                [target('rabbitmq_queue_messages{queue="notification.delivery"}', "messages")],
+                [target('rabbitmq_queue_messages', "messages")],
                 "short",
             ),
         ]
@@ -713,7 +713,7 @@ def build_services_overview():
             y,
             12,
             8,
-            [target('rabbitmq_queue_messages{queue="notification.delivery"}', "notification.delivery")],
+            [target('rabbitmq_queue_messages', "notification.delivery")],
             "short",
         )
     )
