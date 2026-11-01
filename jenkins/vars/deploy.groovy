@@ -54,7 +54,12 @@ def rolloutAll() {
                  git fetch origin master && \\
                  git reset --hard origin/master && \\
                  IMAGE_TAG=${env.BUILD_NUMBER} docker compose up -d && \\
-                 IMAGE_TAG=${env.BUILD_NUMBER} docker compose up -d --no-deps --build rescue-panel"
+                 IMAGE_TAG=${env.BUILD_NUMBER} docker compose up -d --no-deps --build rescue-panel && \\
+                 sleep 20 && \\
+                 if docker compose ps --format '{{.Name}} {{.Status}}' | grep -qi 'Restarting'; then docker compose ps; exit 1; fi && \\
+                 curl -fsS --retry 5 --retry-delay 3 -o /dev/null http://127.0.0.1:8080/actuator/health && \\
+                 curl -fsS --retry 8 --retry-delay 5 --retry-all-errors -o /dev/null https://${env.PANEL_DOMAIN} && \\
+                 ( docker image prune -a -f --filter 'until=168h' >/dev/null 2>&1 || true )"
         """
     }
 }

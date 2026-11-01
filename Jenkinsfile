@@ -14,14 +14,21 @@ env.NOTIFY_ENABLED = env.NOTIFY_ENABLED ?: 'false'
 env.NOTIFY_EMAIL_RECIPIENTS = env.NOTIFY_EMAIL_RECIPIENTS ?: ''
 env.DEPLOY_HOST = env.DEPLOY_HOST ?: 'host.docker.internal'
 env.DEPLOY_PATH = env.DEPLOY_PATH ?: '/opt/sensa'
+env.PANEL_DOMAIN = env.PANEL_DOMAIN ?: 'panel.sensanotify.com'
 
 // Bootstrap on any node: checkout once to read the central service list.
 def labels = [:]
-node {
-    checkout scm
-    def bootstrap = load 'jenkins/services.groovy'
-    bootstrap.allServices().each { service ->
-        labels[service] = bootstrap.agentLabel(service)
+stage('Context') {
+    node {
+        checkout scm
+        def commit = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+        def branch = env.BRANCH_NAME ?: 'master'
+        currentBuild.description = "branch=${branch} commit=${commit} tag=${env.BUILD_NUMBER}"
+        echo "Context: branch=${branch}, commit=${commit}, build=${env.BUILD_NUMBER}, image=${env.DOCKER_IMAGE_PREFIX}:${env.BUILD_NUMBER}, panel=https://${env.PANEL_DOMAIN}"
+        def bootstrap = load 'jenkins/services.groovy'
+        bootstrap.allServices().each { service ->
+            labels[service] = bootstrap.agentLabel(service)
+        }
     }
 }
 
