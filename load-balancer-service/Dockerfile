@@ -9,13 +9,13 @@ COPY Cargo.toml ./
 COPY config.yaml ./
 COPY src ./src
 
-RUN --mount=type=cache,id=cargo-target-load-balancer-service,target=/app/target --mount=type=cache,id=cargo-registry,target=/usr/local/cargo/registry cargo build --release
+RUN --mount=type=cache,id=cargo-target-load-balancer-service,target=/app/target --mount=type=cache,id=cargo-registry,target=/usr/local/cargo/registry cargo build --release && cp /app/target/release/load-balancer-service /app/load-balancer-service
 
 FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /app/target/release/load-balancer-service /usr/local/bin/
+COPY --from=builder /app/load-balancer-service /usr/local/bin/
 COPY --from=builder /app/config.yaml /app/config.yaml
 
 WORKDIR /app

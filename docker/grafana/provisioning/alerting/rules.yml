@@ -1,0 +1,308 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: sensa-infrastructure
+    folder: SENSA
+    interval: 1m
+    rules:
+      - uid: sensa-service-down
+        title: SENSA service down
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: up{job=~"sensa-.*"}
+              instant: true
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 1
+                    type: lt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              expression: A
+              refId: B
+              type: threshold
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: SENSA service down
+          description: "{{ $labels.instance }} is down"
+        labels:
+          severity: critical
+
+      - uid: sensa-high-cpu
+        title: SENSA high CPU
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: 100 - avg(irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100
+              instant: true
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 85
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              expression: A
+              refId: B
+              type: threshold
+        noDataState: NoData
+        execErrState: Error
+        for: 10m
+        annotations:
+          summary: SENSA high CPU usage
+          description: "CPU usage is above 85% for 10 minutes"
+        labels:
+          severity: warning
+
+      - uid: sensa-high-memory
+        title: SENSA high memory
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100
+              instant: true
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 90
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              expression: A
+              refId: B
+              type: threshold
+        noDataState: NoData
+        execErrState: Error
+        for: 10m
+        annotations:
+          summary: SENSA high memory usage
+          description: "Memory usage is above 90% for 10 minutes"
+        labels:
+          severity: warning
+
+      - uid: sensa-disk-usage
+        title: SENSA disk usage
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: 100 - (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100
+              instant: true
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 85
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              expression: A
+              refId: B
+              type: threshold
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: SENSA disk usage
+          description: "Root filesystem usage is above 85%"
+        labels:
+          severity: warning
+
+      - uid: sensa-http-5xx
+        title: SENSA HTTP 5xx errors
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: sum(rate(http_server_requests_seconds_count{status=~"5.."}[5m])) or sum(rate(axum_http_requests_total{status=~"5.."}[5m]))
+              instant: true
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0.5
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              expression: A
+              refId: B
+              type: threshold
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: SENSA HTTP 5xx errors
+          description: "HTTP 5xx rate is above 0.5 req/s"
+        labels:
+          severity: critical
+
+      - uid: sensa-rabbitmq-queue
+        title: SENSA RabbitMQ queue depth
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: rabbitmq_queue_messages{queue="notification.delivery"}
+              instant: true
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 100
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              expression: A
+              refId: B
+              type: threshold
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: SENSA RabbitMQ queue backlog
+          description: "notification.delivery queue has more than 100 messages"
+        labels:
+          severity: warning
+
+      - uid: sensa-kafka-lag
+        title: SENSA Kafka consumer lag
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: sum(kafka_consumergroup_lag)
+              instant: true
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 1000
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              expression: A
+              refId: B
+              type: threshold
+        noDataState: NoData
+        execErrState: Error
+        for: 10m
+        annotations:
+          summary: SENSA Kafka consumer lag
+          description: "Total Kafka consumer lag is above 1000"
+        labels:
+          severity: warning

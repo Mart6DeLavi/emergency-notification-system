@@ -118,6 +118,7 @@ services:
       - "127.0.0.1:15672:15672"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+      - ./docker/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins:ro
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 15s
@@ -488,6 +489,51 @@ services:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
       - /:/rootfs:ro
+    networks:
+      - sensa-network
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    restart: unless-stopped
+    environment:
+      DATA_SOURCE_NAME: postgresql://${POSTGRES_USERNAME:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/postgres?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - sensa-network
+
+  mongodb-exporter:
+    image: percona/mongodb_exporter:0.40.0
+    restart: unless-stopped
+    command:
+      - --mongodb.uri=mongodb://mongo:27017
+      - --collect-all
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - sensa-network
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.62.0
+    restart: unless-stopped
+    environment:
+      REDIS_ADDR: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - sensa-network
+
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:v1.7.0
+    restart: unless-stopped
+    command:
+      - --kafka.server=kafka:9092
+    depends_on:
+      kafka:
+        condition: service_healthy
     networks:
       - sensa-network
 

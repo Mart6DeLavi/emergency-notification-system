@@ -1,0 +1,12 @@
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: sensa-email
+    receivers:
+      - uid: sensa-email
+        type: email
+        settings:
+          addresses: alerts@sensanotify.com
+          singleEmail: false
+        disableResolveMessage: false
