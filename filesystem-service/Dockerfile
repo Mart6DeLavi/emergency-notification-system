@@ -4,7 +4,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg curl && 
 
 WORKDIR /app
 COPY . .
-RUN ./gradlew clean build -x test
+RUN ./gradlew clean build -x test && rm -f build/libs/*-plain.jar
 
 FROM eclipse-temurin:21-jre
 

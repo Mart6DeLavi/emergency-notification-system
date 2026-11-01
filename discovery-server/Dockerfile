@@ -7,7 +7,7 @@ COPY gradlew ./
 COPY build.gradle* settings.gradle* ./
 COPY src ./src
 
-RUN chmod +x gradlew && ./gradlew --no-daemon clean build -x test
+RUN chmod +x gradlew && ./gradlew --no-daemon clean build -x test && rm -f build/libs/*-plain.jar
 
 FROM eclipse-temurin:21-jre
 

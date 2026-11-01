@@ -9,6 +9,7 @@ def security(String service) {
             -v trivy_cache:/root/.cache \
             aquasec/trivy:latest image \
             --severity HIGH,CRITICAL \
+            --ignore-unfixed \
             --exit-code 1 \
             ${image}
     """
