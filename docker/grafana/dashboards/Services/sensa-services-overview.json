@@ -768,7 +768,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "rabbitmq_queue_messages{queue=\"notification.delivery\"}",
+          "expr": "rabbitmq_queue_messages",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
@@ -856,7 +856,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "rabbitmq_queue_messages{queue=\"notification.delivery\"}",
+          "expr": "rabbitmq_queue_messages",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"

@@ -232,7 +232,7 @@ groups:
             datasourceUid: prometheus
             model:
               editorMode: code
-              expr: rabbitmq_queue_messages{queue="notification.delivery"}
+              expr: rabbitmq_queue_messages
               instant: true
               range: false
               refId: A
