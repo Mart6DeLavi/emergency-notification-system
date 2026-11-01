@@ -21,6 +21,11 @@ RUN curl -fsSL "https://download.docker.com/linux/static/stable/x86_64/docker-${
 
 USER root
 RUN mkdir -p /home/jenkins/.gradle && chown -R jenkins:jenkins /home/jenkins
+RUN mkdir -p /usr/local/lib/docker/cli-plugins \
+    && curl -fsSL "https://github.com/docker/buildx/releases/download/v0.19.3/buildx-v0.19.3.linux-amd64" \
+       -o /usr/local/lib/docker/cli-plugins/docker-buildx \
+    && chmod +x /usr/local/lib/docker/cli-plugins/docker-buildx \
+    && docker buildx version
 USER jenkins
 ENV GRADLE_USER_HOME=/home/jenkins/.gradle
 ENV DOCKER_BUILDKIT=1

@@ -33,6 +33,11 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
 ENV PATH="/home/jenkins/.cargo/bin:${PATH}"
 USER root
 RUN mkdir -p /home/jenkins/.cargo && chown -R jenkins:jenkins /home/jenkins
+RUN mkdir -p /usr/local/lib/docker/cli-plugins \
+    && curl -fsSL "https://github.com/docker/buildx/releases/download/v0.19.3/buildx-v0.19.3.linux-amd64" \
+       -o /usr/local/lib/docker/cli-plugins/docker-buildx \
+    && chmod +x /usr/local/lib/docker/cli-plugins/docker-buildx \
+    && docker buildx version
 USER jenkins
 ENV CARGO_HOME=/home/jenkins/.cargo
 ENV DOCKER_BUILDKIT=1
