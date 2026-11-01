@@ -67,9 +67,15 @@ try {
         }
     }
 } finally {
-    node {
-        checkout scm
-        def ci = load 'jenkins/ci.groovy'
-        ci.notify(currentBuild.currentResult)
+    stage('Post Actions') {
+        node {
+            checkout scm
+            def ci = load 'jenkins/ci.groovy'
+            try {
+                ci.notify(currentBuild.currentResult)
+            } finally {
+                ci.cleanup()
+            }
+        }
     }
 }
