@@ -25,5 +25,4 @@ notification-service2/
 .kotlin/
 
 # Local screenshots (not part of the repo)
-/img.png
-/img_1.png
+/img*.png
