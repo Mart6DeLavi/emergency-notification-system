@@ -9,13 +9,13 @@ COPY Cargo.toml ./
 COPY config.yaml ./
 COPY src ./src
 
-RUN --mount=type=cache,id=cargo-target-api-gateway,target=/app/target --mount=type=cache,id=cargo-registry,target=/usr/local/cargo/registry cargo build --release
+RUN --mount=type=cache,id=cargo-target-api-gateway,target=/app/target --mount=type=cache,id=cargo-registry,target=/usr/local/cargo/registry cargo build --release && cp /app/target/release/api-gateway /app/api-gateway
 
 FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates libssl3 && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /app/target/release/api-gateway /usr/local/bin/
+COPY --from=builder /app/api-gateway /usr/local/bin/
 COPY --from=builder /app/config.yaml /app/config.yaml
 
 WORKDIR /app
