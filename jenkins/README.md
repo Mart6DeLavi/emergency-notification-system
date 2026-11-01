@@ -145,3 +145,15 @@ stat -c '%g' /var/run/docker.sock
 Сервисы одного типа делят одну метку агента. Пока у метки один executor,
 параллельные ветки выполняются последовательно. Чтобы ускорить сборку,
 добавь агентов с той же меткой или увеличь число executors у ноды.
+
+## GitHub webhook (push → build)
+
+Job `sensa` has `GitHubPushTrigger` enabled. In GitHub:
+Settings → Webhooks → Add webhook:
+- Payload URL: `https://jenkins.sensanotify.com/github-webhook/`
+- Content type: `application/json`
+- Events: `push`
+- Secret: empty (for a secret, use `generic-webhook-trigger`)
+- Active: yes
+
+Every push to `master` starts a new build; the job checks out the pushed commit.
