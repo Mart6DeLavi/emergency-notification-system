@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 FROM eclipse-temurin:21-jdk AS builder
 
 WORKDIR /app
@@ -7,7 +8,7 @@ COPY gradlew ./
 COPY build.gradle* settings.gradle* ./
 COPY src ./src
 
-RUN chmod +x gradlew && ./gradlew --no-daemon clean build -x test && rm -f build/libs/*-plain.jar
+RUN --mount=type=cache,id=gradle-template-service,target=/root/.gradle chmod +x gradlew && ./gradlew --no-daemon clean build -x test && rm -f build/libs/*-plain.jar
 
 FROM eclipse-temurin:21-jre
 

@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 FROM rust:1.98-slim-bookworm AS builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -8,7 +9,7 @@ COPY Cargo.toml ./
 COPY config.yaml ./
 COPY src ./src
 
-RUN cargo build --release
+RUN --mount=type=cache,id=cargo-target-rate-limiter-service,target=/app/target --mount=type=cache,id=cargo-registry,target=/usr/local/cargo/registry cargo build --release
 
 FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \

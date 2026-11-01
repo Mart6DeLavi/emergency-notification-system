@@ -31,3 +31,8 @@ USER jenkins
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
     | sh -s -- -y --default-toolchain 1.98.0 --profile minimal
 ENV PATH="/home/jenkins/.cargo/bin:${PATH}"
+USER root
+RUN mkdir -p /home/jenkins/.cargo && chown -R jenkins:jenkins /home/jenkins
+USER jenkins
+ENV CARGO_HOME=/home/jenkins/.cargo
+ENV DOCKER_BUILDKIT=1

@@ -19,4 +19,8 @@ RUN curl -fsSL "https://download.docker.com/linux/static/stable/x86_64/docker-${
     | tar -xz --strip-components=1 -C /usr/local/bin docker/docker \
     && docker --version
 
+USER root
+RUN mkdir -p /home/jenkins/.gradle && chown -R jenkins:jenkins /home/jenkins
 USER jenkins
+ENV GRADLE_USER_HOME=/home/jenkins/.gradle
+ENV DOCKER_BUILDKIT=1

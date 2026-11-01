@@ -31,6 +31,7 @@ services:
       JENKINS_SECRET: ${JENKINS_AGENT_GRADLE_SECRET}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - gradle_cache:/home/jenkins/.gradle
     group_add:
       - "${DOCKER_GID:-988}"
     extra_hosts:
@@ -51,6 +52,7 @@ services:
       JENKINS_SECRET: ${JENKINS_AGENT_RUST_SECRET}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - cargo_cache:/home/jenkins/.cargo
     group_add:
       - "${DOCKER_GID:-988}"
     extra_hosts:
@@ -66,3 +68,5 @@ networks:
 
 volumes:
   jenkins_home:
+  gradle_cache:
+  cargo_cache:

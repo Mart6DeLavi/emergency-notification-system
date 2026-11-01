@@ -1,10 +1,11 @@
+# syntax=docker/dockerfile:1.7
 FROM eclipse-temurin:21-jdk AS builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg curl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY . .
-RUN ./gradlew clean build -x test && rm -f build/libs/*-plain.jar
+RUN --mount=type=cache,id=gradle-filesystem-service,target=/root/.gradle ./gradlew clean build -x test && rm -f build/libs/*-plain.jar
 
 FROM eclipse-temurin:21-jre
 
