@@ -6,7 +6,7 @@ def security(String service) {
     sh """
         docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
-            -v trivy_cache:/root/.cache \
+            -v trivy_cache_${service}:/root/.cache \
             aquasec/trivy:latest image \
             --severity HIGH,CRITICAL \
             --ignore-unfixed \
