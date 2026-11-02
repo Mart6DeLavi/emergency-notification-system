@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import { LCircle, LMap, LMarker, LTileLayer } from '@vue-leaflet/vue-leaflet'
 import L from 'leaflet'
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
-import markerIcon from 'leaflet/dist/images/marker-icon.png'
-import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 
 const props = defineProps<{
   city?: string | null
@@ -19,7 +16,38 @@ const locationText = computed(() =>
   [props.street, props.city].filter(Boolean).join(', '),
 )
 
-const radiusMeters = computed(() => Math.max(0.5, props.radiusKm) * 1000)
+const radiusMeters = computed(() => Math.max(0.1, props.radiusKm) * 1000)
+
+const radiusLabel = computed(() =>
+  props.radiusKm < 1
+    ? `${Math.round(props.radiusKm * 1000)} m`
+    : `${props.radiusKm.toFixed(1)} km`,
+)
+
+// Place the radius pill on the eastern edge of the circle.
+const labelCoords = computed<[number, number] | null>(() => {
+  if (!coords.value) return null
+  const [lat, lon] = coords.value
+  const latRadians = (lat * Math.PI) / 180
+  const deltaLon = props.radiusKm / (111.32 * Math.cos(latRadians))
+  return [lat - props.radiusKm / 111.32 / 4, lon + deltaLon]
+})
+
+const pinIcon = L.divIcon({
+  className: 'area-pin',
+  html: '<span class="area-pin__body"></span><span class="area-pin__dot"></span>',
+  iconSize: [34, 44],
+  iconAnchor: [17, 44],
+})
+
+const radiusIcon = computed(() =>
+  L.divIcon({
+    className: 'area-radius-label',
+    html: `<span>${radiusLabel.value}</span>`,
+    iconSize: [70, 24],
+    iconAnchor: [35, 12],
+  }),
+)
 
 async function geocode() {
   const parts = [props.street, props.city, 'Poland'].filter(Boolean)
@@ -55,12 +83,6 @@ onMounted(geocode)
 onUnmounted(() => {
   if (timer) clearTimeout(timer)
 })
-
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: markerIcon2x,
-  iconUrl: markerIcon,
-  shadowUrl: markerShadow,
-})
 </script>
 
 <template>
@@ -73,25 +95,31 @@ L.Icon.Default.mergeOptions({
       :key="`${coords[0]}-${coords[1]}`"
       :zoom="13"
       :center="coords"
-      :zoom-control="false"
+      :zoom-control="true"
       style="height: 100%; width: 100%; border-radius: 12px; z-index: 0"
     >
       <LTileLayer
-        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-        attribution="&copy; OpenStreetMap contributors &copy; CARTO"
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution="&copy; OpenStreetMap contributors"
       />
       <LCircle
         :lat-lng="coords"
         :radius="radiusMeters"
         :path-options="{
-          color: '#34d399',
-          fillColor: '#34d399',
-          fillOpacity: 0.14,
+          color: '#ef4444',
+          fillColor: '#ef4444',
+          fillOpacity: 0.07,
           weight: 2,
-          dashArray: '5 4',
+          dashArray: '7 6',
         }"
       />
-      <LMarker :lat-lng="coords" />
+      <LMarker :lat-lng="coords" :icon="pinIcon" />
+      <LMarker
+        v-if="labelCoords"
+        :lat-lng="labelCoords"
+        :icon="radiusIcon"
+        :interactive="false"
+      />
     </LMap>
     <div v-else class="area-map-empty">
       <i class="pi pi-map-marker" />
