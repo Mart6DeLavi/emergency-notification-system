@@ -22,7 +22,7 @@ public class RedisCacheConfig {
         ObjectMapper cacheMapper = objectMapper.copy();
         cacheMapper.activateDefaultTyping(
                 cacheMapper.getPolymorphicTypeValidator(),
-                ObjectMapper.DefaultTyping.OBJECT_AND_NON_CONCRETE,
+                ObjectMapper.DefaultTyping.NON_FINAL,
                 JsonTypeInfo.As.PROPERTY);
 
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
