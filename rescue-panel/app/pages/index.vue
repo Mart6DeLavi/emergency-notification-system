@@ -20,6 +20,17 @@ const statusOptions: { label: string; value: EmergencyStatus | null }[] = [
   { label: 'Rejected', value: 'REJECTED' },
 ]
 
+const stats = computed(() => ({
+  total: emergencies.value.length,
+  open: emergencies.value.filter(
+    (e) => e.status === 'REPORTED' || e.status === 'UNDER_REVIEW',
+  ).length,
+  confirmed: emergencies.value.filter(
+    (e) => e.status === 'CONFIRMED' || e.status === 'BROADCAST',
+  ).length,
+  rejected: emergencies.value.filter((e) => e.status === 'REJECTED').length,
+}))
+
 const filtered = computed(() => {
   const term = search.value.trim().toLowerCase()
   return emergencies.value.filter((e) => {
@@ -30,6 +41,10 @@ const filtered = computed(() => {
     )
   })
 })
+
+function statusClass(status: EmergencyStatus) {
+  return `status status--${status.toLowerCase()}`
+}
 
 async function load() {
   try {
@@ -65,70 +80,103 @@ onUnmounted(() => {
 
 <template>
   <div>
-    <div class="flex-between mb-2">
+    <div class="page-header">
       <div>
-        <h2 style="margin: 0">Emergencies</h2>
-        <span class="muted">Reports awaiting verification and broadcast</span>
+        <h1 class="page-title">Emergencies</h1>
+        <p class="page-subtitle">Reports awaiting verification and broadcast</p>
+      </div>
+
+      <div class="page-actions">
+        <div class="search-wrap">
+          <i class="pi pi-search" />
+          <InputText
+            v-model="search"
+            class="search-input"
+            placeholder="Search title, city, street…"
+          />
+        </div>
+        <Select
+          v-model="statusFilter"
+          :options="statusOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="All statuses"
+        />
+        <Button
+          icon="pi pi-refresh"
+          label="Refresh"
+          severity="secondary"
+          outlined
+          @click="load"
+        />
       </div>
     </div>
 
-    <Card>
-      <template #content>
-        <div class="flex-between mb-2">
-          <InputText v-model="search" placeholder="Search title, city, street…" />
-          <div class="flex-between" style="gap: 0.75rem">
-            <Select
-              v-model="statusFilter"
-              :options="statusOptions"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Status"
-            />
-            <Button icon="pi pi-refresh" label="Refresh" @click="load" />
-          </div>
-        </div>
+    <div class="stats-grid">
+      <div class="panel stat">
+        <div class="stat-label">Total reports</div>
+        <div class="stat-value">{{ stats.total }}</div>
+      </div>
+      <div class="panel stat">
+        <div class="stat-label">Open</div>
+        <div class="stat-value warning">{{ stats.open }}</div>
+      </div>
+      <div class="panel stat">
+        <div class="stat-label">Confirmed</div>
+        <div class="stat-value success">{{ stats.confirmed }}</div>
+      </div>
+      <div class="panel stat">
+        <div class="stat-label">Rejected</div>
+        <div class="stat-value danger">{{ stats.rejected }}</div>
+      </div>
+    </div>
 
-        <DataTable
-          :value="filtered"
-          :loading="loading"
-          dataKey="id"
-          stripedRows
-          responsiveLayout="scroll"
-          emptyMessage="No emergencies found"
-        >
-          <Column header="Status">
-            <template #body="{ data }">
-              <Tag
-                :value="statusLabel(data.status)"
-                :severity="statusSeverity(data.status)"
-              />
-            </template>
-          </Column>
-          <Column field="title" header="Title" />
-          <Column header="Location">
-            <template #body="{ data }">
-              {{ [data.city, data.street].filter(Boolean).join(', ') || '—' }}
-            </template>
-          </Column>
-          <Column header="Reported at">
-            <template #body="{ data }">
-              {{ formatDateTime(data.alarmTimestamp || data.createdAt) }}
-            </template>
-          </Column>
-          <Column header="">
-            <template #body="{ data }">
-              <Button
-                label="View"
-                icon="pi pi-arrow-right"
-                iconPos="right"
-                size="small"
-                text
-                @click="openEmergency(data)"
-              />
-            </template>
-          </Column>
-        </DataTable>
-      </template>
-    </Card>
+    <div class="panel">
+      <div class="panel-header">
+        <h2 class="panel-title">All reports</h2>
+        <span class="muted-sm">{{ filtered.length }} shown</span>
+      </div>
+
+      <div v-if="loading" class="panel-body muted">Loading…</div>
+      <div v-else-if="!filtered.length" class="panel-body attachment-empty">
+        No emergencies found.
+      </div>
+
+      <table v-else class="table">
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Emergency</th>
+            <th>Location</th>
+            <th>Reported</th>
+            <th />
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="row in filtered"
+            :key="row.id"
+            @click="openEmergency(row)"
+          >
+            <td>
+              <span :class="statusClass(row.status)">{{ statusLabel(row.status) }}</span>
+            </td>
+            <td>
+              <div class="row-title">{{ row.title }}</div>
+              <div class="row-sub">#{{ row.id }}</div>
+            </td>
+            <td>
+              {{ [row.city, row.street].filter(Boolean).join(', ') || '—' }}
+            </td>
+            <td class="muted-sm">
+              {{ formatDateTime(row.alarmTimestamp || row.createdAt) }}
+            </td>
+            <td style="text-align: right">
+              <i class="pi pi-chevron-right muted" />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>

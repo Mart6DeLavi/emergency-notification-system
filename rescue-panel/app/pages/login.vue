@@ -3,7 +3,7 @@ import { useToast } from 'primevue/usetoast'
 import { useAuthStore } from '~/stores/auth'
 import type { AuthResponse } from '~/types'
 
-definePageMeta({ layout: 'blank' })
+definePageMeta({ layout: false })
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -39,39 +39,67 @@ async function submit() {
 </script>
 
 <template>
-  <Card class="auth-card">
-    <template #title>Rescue Panel — Sign in</template>
-    <template #subtitle>Emergency notification system</template>
-    <template #content>
-      <div class="w-full">
-        <label class="muted">Email</label>
-        <InputText
-          v-model="email"
-          type="email"
-          class="w-full mt-1"
-          placeholder="operator@example.com"
-          @keyup.enter="submit"
+  <div class="auth-split">
+    <div class="auth-brand">
+      <div class="app-brand" style="padding: 0">
+        <div class="brand-mark">
+          <i class="pi pi-shield" />
+        </div>
+        <div>
+          <div class="brand-name">SENSA</div>
+          <div class="brand-sub" style="color: rgba(255, 255, 255, 0.45)">Rescue</div>
+        </div>
+      </div>
+
+      <div>
+        <h1 class="auth-brand-title">Emergency operations, in one place.</h1>
+        <p class="auth-brand-text">
+          Review incoming reports, verify incidents and broadcast alerts to the
+          affected area.
+        </p>
+      </div>
+
+      <div class="muted-sm" style="color: rgba(255, 255, 255, 0.4)">
+        SENSA · Emergency notification system
+      </div>
+    </div>
+
+    <div class="auth-form-wrap">
+      <div class="auth-form">
+        <h2 class="auth-title">Sign in</h2>
+        <p class="auth-subtitle">Use your rescue operator account.</p>
+
+        <div class="field">
+          <label>Email</label>
+          <InputText
+            v-model="email"
+            type="email"
+            class="w-full"
+            placeholder="operator@example.com"
+            @keyup.enter="submit"
+          />
+        </div>
+
+        <div class="field">
+          <label>Password</label>
+          <Password
+            v-model="password"
+            class="w-full"
+            inputClass="w-full"
+            :feedback="false"
+            toggleMask
+            @keyup.enter="submit"
+          />
+        </div>
+
+        <Button
+          class="w-full mt-2"
+          label="Sign in"
+          :loading="loading"
+          :disabled="!email || !password"
+          @click="submit"
         />
       </div>
-      <div class="w-full mt-2">
-        <label class="muted">Password</label>
-        <Password
-          v-model="password"
-          class="w-full mt-1"
-          inputClass="w-full"
-          :feedback="false"
-          toggleMask
-          @keyup.enter="submit"
-        />
-      </div>
-      <Button
-        class="w-full mt-3"
-        label="Sign in"
-        icon="pi pi-sign-in"
-        :loading="loading"
-        :disabled="!email || !password"
-        @click="submit"
-      />
-    </template>
-  </Card>
+    </div>
+  </div>
 </template>
