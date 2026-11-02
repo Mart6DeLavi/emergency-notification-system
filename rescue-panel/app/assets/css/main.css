@@ -1914,3 +1914,113 @@ body {
     min-height: 56vh;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Detail pane: consistent grid + AI moderation metadata              */
+/* ------------------------------------------------------------------ */
+
+.detail-pane {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+.events-list {
+  flex: 0 0 420px;
+  width: 420px;
+}
+
+.detail-grid {
+  grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.85fr);
+  align-items: start;
+}
+
+.detail-main > .panel + .panel,
+.detail-side > .panel + .panel {
+  margin-top: 0;
+}
+
+.detail-main .panel,
+.detail-side .panel {
+  min-width: 0;
+}
+
+.attachment-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 9px 10px 10px;
+}
+
+.attachment-name {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attachment-ai-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ai-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.ai-pill--approved { color: #3ddc97; background: rgba(61, 220, 151, 0.12); }
+.ai-pill--rejected { color: #ff7b72; background: rgba(255, 123, 114, 0.12); }
+.ai-pill--pending { color: #f2c94c; background: rgba(242, 201, 76, 0.12); }
+.ai-pill--unknown { color: var(--muted); background: rgba(255, 255, 255, 0.07); }
+
+.attachment-confidence {
+  color: var(--muted);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.confidence-bar {
+  height: 3px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.confidence-bar span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--muted);
+  transition: width 0.3s ease;
+}
+
+.attachment-card .attachment-media img {
+  object-fit: cover;
+}
+
+@media (max-width: 1280px) {
+  .detail-grid {
+    grid-template-columns: minmax(0, 1.3fr) minmax(300px, 0.9fr);
+  }
+}
+
+@media (max-width: 1100px) {
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .events-list {
+    flex-basis: 340px;
+    width: 340px;
+  }
+}
