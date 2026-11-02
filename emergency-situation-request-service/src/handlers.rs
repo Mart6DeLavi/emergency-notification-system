@@ -92,9 +92,9 @@ pub async fn create_emergency(
 ) -> Result<(axum::http::StatusCode, Json<EmergencyResponse>), AppError> {
     let user_id = auth_user_id(&headers, &state.config)?;
 
-    let files_json = req.files.map(|files| {
-        serde_json::to_value(files).unwrap_or(serde_json::Value::Null)
-    });
+    let files_json = req
+        .files
+        .map(|files| serde_json::to_value(files).unwrap_or(serde_json::Value::Null));
 
     let emergency = state
         .repository
@@ -122,7 +122,26 @@ pub async fn list_emergencies(
 ) -> Result<Json<Vec<EmergencyResponse>>, AppError> {
     auth_user_id(&headers, &state.config)?;
     let emergencies = state.repository.find_all().await?;
-    Ok(Json(emergencies.into_iter().map(EmergencyResponse::from).collect()))
+    Ok(Json(
+        emergencies
+            .into_iter()
+            .map(EmergencyResponse::from)
+            .collect(),
+    ))
+}
+
+pub async fn get_my_emergencies(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> Result<Json<Vec<EmergencyResponse>>, AppError> {
+    let user_id = auth_user_id(&headers, &state.config)?;
+    let emergencies = state.repository.find_by_user_id(user_id).await?;
+    Ok(Json(
+        emergencies
+            .into_iter()
+            .map(EmergencyResponse::from)
+            .collect(),
+    ))
 }
 
 pub async fn get_emergency(
@@ -153,8 +172,8 @@ pub async fn update_status(
         .await?
         .ok_or_else(|| AppError::NotFound(format!("Emergency {} not found", id)))?;
 
-    let current_status = EmergencyStatus::from_str(&current.status)
-        .map_err(AppError::BadRequest)?;
+    let current_status =
+        EmergencyStatus::from_str(&current.status).map_err(AppError::BadRequest)?;
     let next_status = EmergencyStatus::from_str(&req.status).map_err(AppError::BadRequest)?;
 
     if !current_status.can_transit_to(&next_status) {
