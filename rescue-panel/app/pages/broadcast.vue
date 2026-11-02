@@ -275,7 +275,7 @@ onMounted(loadHistory)
               v-model="radiusKm"
               :min="0.5"
               :max="10"
-              :step="0.5"
+              :step="0.1"
               class="notify-slider"
             />
             <div class="notify-radius-scale">
@@ -331,6 +331,8 @@ onMounted(loadHistory)
           class="phone-frame"
           :class="previewPlatform === 'ANDROID' ? 'phone-frame--android' : 'phone-frame--ios'"
         >
+          <div class="phone-wallpaper" />
+          <div class="phone-island" />
           <div class="phone-statusbar">
             <span>9:41</span>
             <span class="phone-statusbar-icons">
