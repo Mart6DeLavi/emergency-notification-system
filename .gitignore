@@ -31,6 +31,7 @@ notification-service2/
 mobile/ios/DerivedData/
 mobile/ios/build/
 mobile/ios/SENSA.xcodeproj/
+mobile/ios/Info.plist
 mobile/ios/*.xcuserstate
 mobile/ios/**/*.xcuserdata/
 mobile/ios/.build/
