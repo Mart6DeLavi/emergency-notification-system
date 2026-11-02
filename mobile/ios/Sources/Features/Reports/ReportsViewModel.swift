@@ -3,6 +3,7 @@ import Combine
 
 @MainActor
 final class ReportsViewModel: ObservableObject {
+    @Published private(set) var alerts: [SystemAlert] = []
     @Published private(set) var reports: [Emergency] = []
     @Published private(set) var isLoading = false
     @Published var errorMessage: String?
@@ -13,11 +14,20 @@ final class ReportsViewModel: ObservableObject {
         isLoading = true
         defer { isLoading = false }
 
+        var errors: [String] = []
+
+        do {
+            alerts = try await session.api.getMyAlerts()
+        } catch {
+            errors.append("Alerts: \(error.localizedDescription)")
+        }
+
         do {
             reports = try await session.api.getMyEmergencies()
-            errorMessage = nil
         } catch {
-            errorMessage = error.localizedDescription
+            errors.append("Reports: \(error.localizedDescription)")
         }
+
+        errorMessage = errors.first
     }
 }

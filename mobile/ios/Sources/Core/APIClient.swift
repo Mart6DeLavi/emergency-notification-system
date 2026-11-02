@@ -89,6 +89,10 @@ final class APIClient {
         try await send(makeRequest("/v1/emergencies/my"))
     }
 
+    func getMyAlerts() async throws -> [SystemAlert] {
+        try await send(makeRequest("/v1/notifications"))
+    }
+
     func getEmergency(id: Int64) async throws -> Emergency {
         try await send(makeRequest("/v1/emergencies/\(id)"))
     }
