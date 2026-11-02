@@ -3956,3 +3956,27 @@ body {
   background: #f8fafc;
   color: #0f172a;
 }
+
+/* Android uses a punch-hole camera, not the iPhone Dynamic Island. */
+.phone-frame--android .phone-island {
+  top: 18px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #000;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.08);
+}
+
+.phone-frame--android .phone-island::after {
+  content: none;
+}
+
+/* PrimeVue theme styles can land after this file, so force the green knob. */
+.notify-page .notify-slider .p-slider-handle,
+.notify-page .notify-slider .p-slider-handle:hover,
+.notify-page .notify-slider .p-slider-handle:focus,
+.notify-page .notify-slider .p-slider-handle:active {
+  border: 0 !important;
+  background: #34d399 !important;
+  box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.22) !important;
+}
