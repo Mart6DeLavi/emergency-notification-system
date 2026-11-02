@@ -169,6 +169,7 @@ services:
       - "${SENSA_BIND_IP:-127.0.0.1}:8000:8000"
     environment:
       <<: [*postgres-credentials, *eureka, *kafka, *java-opts]
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/Sensa_User_Data_Management_Service
       SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/Sensa_User_Data_Management_Service
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
