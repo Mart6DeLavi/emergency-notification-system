@@ -3488,3 +3488,185 @@ body {
     padding-top: 0;
   }
 }
+
+/* Preview platform switch + compact phone + stretched dark map */
+.notify-preview-head {
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.notify-preview-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.preview-platform {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #0c1015;
+}
+
+.preview-platform button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 24px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.preview-platform button i {
+  font-size: 10px;
+}
+
+.preview-platform button.active {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.phone-frame {
+  width: min(100%, 292px);
+  min-height: 382px;
+  margin: 0 auto;
+  padding: 12px 14px 16px;
+  border-radius: 27px;
+}
+
+.phone-frame::before {
+  top: 8px;
+  width: 76px;
+  height: 17px;
+}
+
+.phone-statusbar {
+  font-size: 9px;
+}
+
+.phone-clock {
+  margin: 34px 0 22px;
+}
+
+.phone-clock strong {
+  font-size: 38px;
+}
+
+.phone-clock span {
+  font-size: 9.5px;
+}
+
+.phone-notification {
+  padding: 9px;
+  gap: 8px;
+  border-radius: 12px;
+}
+
+.phone-notification-icon {
+  flex-basis: 28px;
+  height: 28px;
+  border-radius: 8px;
+  font-size: 11px;
+}
+
+.phone-notification-body strong {
+  font-size: 11px;
+}
+
+.phone-notification-body p {
+  font-size: 9.5px;
+}
+
+.phone-email,
+.phone-sms {
+  padding: 11px;
+  border-radius: 12px;
+}
+
+.phone-home-indicator {
+  bottom: 6px;
+  width: 86px;
+  height: 3px;
+}
+
+.phone-frame--android {
+  border-radius: 20px;
+  box-shadow: inset 0 0 0 4px #0a0d11;
+}
+
+.phone-frame--android::before {
+  top: 13px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.phone-frame--android .phone-statusbar {
+  padding-top: 4px;
+}
+
+.phone-frame--android .phone-clock {
+  margin: 42px 0 24px;
+}
+
+.phone-frame--android .phone-notification {
+  border-color: rgba(15, 23, 42, 0.15);
+  border-radius: 9px;
+  background: #eef2f7;
+}
+
+.phone-frame--android .phone-notification-body strong,
+.phone-frame--android .phone-notification-meta {
+  color: #0f172a;
+}
+
+.phone-frame--android .phone-notification-body p {
+  color: #334155;
+}
+
+.phone-frame--android .phone-notification-meta small {
+  color: #64748b;
+}
+
+.phone-frame--android .phone-notification-icon {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.notify-grid {
+  align-items: stretch;
+}
+
+.notify-preview,
+.notify-side {
+  height: 100%;
+}
+
+.target-card {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.target-card .area-map,
+.target-card .target-all {
+  flex: 1;
+  min-height: 260px;
+  height: auto;
+}
+
+@media (max-width: 1450px) {
+  .notify-side {
+    height: auto;
+  }
+}
