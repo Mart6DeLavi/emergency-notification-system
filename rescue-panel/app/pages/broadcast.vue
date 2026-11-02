@@ -50,6 +50,7 @@ const city = ref('')
 const street = ref('')
 const radiusKm = ref(2.5)
 const previewChannel = ref<PreviewChannel>('PUSH')
+const previewPlatform = ref<'IOS' | 'ANDROID'>('IOS')
 
 const sending = ref(false)
 const result = ref<BroadcastResult | null>(null)
@@ -245,12 +246,6 @@ onMounted(loadHistory)
             >
               By location
             </button>
-            <button type="button" disabled title="Role targeting is not available yet">
-              By role
-            </button>
-            <button type="button" disabled title="Custom groups are not available yet">
-              Custom group
-            </button>
           </div>
         </div>
 
@@ -297,22 +292,45 @@ onMounted(loadHistory)
       </section>
 
       <section class="notify-card notify-preview">
-        <div class="notify-card-head">
+        <div class="notify-card-head notify-preview-head">
           <h2><i class="pi pi-eye" /> Preview</h2>
-          <div class="preview-tabs">
-            <button
-              v-for="channel in (['PUSH', 'EMAIL', 'SMS'] as PreviewChannel[])"
-              :key="channel"
-              type="button"
-              :class="{ active: previewChannel === channel }"
-              @click="previewChannel = channel"
-            >
-              {{ channel === 'PUSH' ? 'Push' : channel === 'EMAIL' ? 'Email' : 'SMS' }}
-            </button>
+          <div class="notify-preview-controls">
+            <div class="preview-platform">
+              <button
+                type="button"
+                :class="{ active: previewPlatform === 'IOS' }"
+                @click="previewPlatform = 'IOS'"
+              >
+                <i class="pi pi-apple" />
+                iOS
+              </button>
+              <button
+                type="button"
+                :class="{ active: previewPlatform === 'ANDROID' }"
+                @click="previewPlatform = 'ANDROID'"
+              >
+                <i class="pi pi-android" />
+                Android
+              </button>
+            </div>
+            <div class="preview-tabs">
+              <button
+                v-for="channel in (['PUSH', 'EMAIL', 'SMS'] as PreviewChannel[])"
+                :key="channel"
+                type="button"
+                :class="{ active: previewChannel === channel }"
+                @click="previewChannel = channel"
+              >
+                {{ channel === 'PUSH' ? 'Push' : channel === 'EMAIL' ? 'Email' : 'SMS' }}
+              </button>
+            </div>
           </div>
         </div>
 
-        <div class="phone-frame">
+        <div
+          class="phone-frame"
+          :class="previewPlatform === 'ANDROID' ? 'phone-frame--android' : 'phone-frame--ios'"
+        >
           <div class="phone-statusbar">
             <span>9:41</span>
             <span class="phone-statusbar-icons">
