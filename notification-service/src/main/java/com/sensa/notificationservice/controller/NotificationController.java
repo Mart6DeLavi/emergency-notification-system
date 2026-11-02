@@ -2,6 +2,8 @@ package com.sensa.notificationservice.controller;
 
 import com.sensa.notificationservice.dto.NotificationRequest;
 import com.sensa.notificationservice.dto.NotificationResponse;
+import com.sensa.notificationservice.dto.BroadcastRequest;
+import com.sensa.notificationservice.dto.BroadcastResponse;
 import com.sensa.notificationservice.service.NotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -38,6 +40,19 @@ public class NotificationController {
     ) {
         NotificationResponse response = notificationService.createNotification(request, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @Operation(summary = "Broadcast to users", description = "Sends an operator alert to all users or to a city/street area")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Broadcast queued"),
+            @ApiResponse(responseCode = "400", description = "Invalid data"),
+            @ApiResponse(responseCode = "500", description = "Server error")
+    })
+    @PostMapping("/broadcast")
+    public ResponseEntity<BroadcastResponse> broadcast(
+            @RequestBody @Valid BroadcastRequest request
+    ) {
+        return ResponseEntity.ok(notificationService.broadcast(request));
     }
 
     @Operation(summary = "Get my notifications", description = "Returns all notifications for current user")

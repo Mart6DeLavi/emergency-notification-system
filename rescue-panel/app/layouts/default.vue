@@ -56,6 +56,15 @@ function logout() {
         <span>{{ t('templates') }}</span>
       </NuxtLink>
 
+      <NuxtLink
+        to="/broadcast"
+        class="app-nav-item"
+        :class="{ active: route.path.startsWith('/broadcast') }"
+      >
+        <i class="pi pi-send" />
+        <span>{{ t('notify') }}</span>
+      </NuxtLink>
+
       <div class="sidebar-spacer" />
 
       <button type="button" class="account-button" @click="accountOpen = true">
