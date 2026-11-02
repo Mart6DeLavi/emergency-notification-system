@@ -16,6 +16,7 @@ import com.sensa.usermanagementservice.exception.UserNotFoundException;
 import com.sensa.usermanagementservice.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -33,44 +34,70 @@ public class UserService {
     private final UserLocationDataRepository userLocationDataRepository;
     private final UserNotificationSettingsRepository userNotificationSettingsRepository;
     private final UserMapper userMapper;
+    private final DatabaseClient databaseClient;
 
     public Mono<Void> createFromKafkaEvent(UserCreateEvent event) {
         log.info("Creating user from Kafka event: userId={}", event.userId());
 
-        UserEntity userEntity = UserEntity.builder()
-                .userId(event.userId())
-                .build();
+        LocalDateTime now = LocalDateTime.now();
 
-        return userEntityRepository.save(userEntity)
-                .flatMap(savedEntity -> {
-                    UserMainDataEntity mainData = UserMainDataEntity.builder()
-                            .userEntityId(savedEntity.getId())
-                            .firstName(event.firstName())
-                            .lastName(event.lastName())
-                            .email(event.email())
-                            .phoneNumber(event.phoneNumber())
-                            .build();
-
-                    UserLocationDataEntity location = UserLocationDataEntity.builder()
-                            .userEntityId(savedEntity.getId())
-                            .country(event.country())
-                            .city(event.city())
-                            .street(event.street())
-                            .homeNumber(event.homeNumber())
-                            .build();
-
-                    UserNotificationsSettingsEntity settings = UserNotificationsSettingsEntity.builder()
-                            .userEntityId(savedEntity.getId())
-                            .build();
-
-                    return Mono.when(
-                            userMainDataRepository.save(mainData),
-                            userLocationDataRepository.save(location),
-                            userNotificationSettingsRepository.save(settings)
-                    );
-                })
+        return databaseClient.sql("""
+                        INSERT INTO users (user_id, created_at)
+                        VALUES (:userId, :now)
+                        RETURNING id
+                        """)
+                .bind("userId", event.userId())
+                .bind("now", now)
+                .map((row, metadata) -> row.get("id", Long.class))
+                .one()
+                .flatMap(id -> Mono.when(
+                        insertMainData(id, event, now),
+                        insertLocation(id, event, now),
+                        insertNotificationSettings(id, now)
+                ))
                 .doOnSuccess(v -> log.info("User created successfully: userId={}", event.userId()))
                 .doOnError(e -> log.error("Failed to create user: userId={}", event.userId(), e))
+                .then();
+    }
+
+    private Mono<Void> insertMainData(Long id, UserCreateEvent event, LocalDateTime now) {
+        return databaseClient.sql("""
+                        INSERT INTO user_main_data
+                            (user_entity_id, first_name, last_name, email, phone_number, created_at, updated_at)
+                        VALUES (:id, :firstName, :lastName, :email, :phoneNumber, :now, :now)
+                        """)
+                .bind("id", id)
+                .bind("firstName", event.firstName())
+                .bind("lastName", event.lastName())
+                .bind("email", event.email())
+                .bind("phoneNumber", event.phoneNumber())
+                .bind("now", now)
+                .then();
+    }
+
+    private Mono<Void> insertLocation(Long id, UserCreateEvent event, LocalDateTime now) {
+        return databaseClient.sql("""
+                        INSERT INTO user_location_data
+                            (user_entity_id, country, city, street, home_number, created_at, updated_at)
+                        VALUES (:id, :country, :city, :street, :homeNumber, :now, :now)
+                        """)
+                .bind("id", id)
+                .bind("country", event.country())
+                .bind("city", event.city())
+                .bind("street", event.street())
+                .bind("homeNumber", event.homeNumber())
+                .bind("now", now)
+                .then();
+    }
+
+    private Mono<Void> insertNotificationSettings(Long id, LocalDateTime now) {
+        return databaseClient.sql("""
+                        INSERT INTO user_notification_settings
+                            (user_entity_id, push, email_enabled, sms, created_at, updated_at)
+                        VALUES (:id, TRUE, TRUE, TRUE, :now, :now)
+                        """)
+                .bind("id", id)
+                .bind("now", now)
                 .then();
     }
 
