@@ -3,6 +3,7 @@ package com.sensa.notificationservice.service;
 import com.sensa.notificationservice.client.TemplateServiceClient;
 import com.sensa.notificationservice.client.UserDataServiceClient;
 import com.sensa.notificationservice.config.RabbitMQConfig;
+import com.sensa.notificationservice.dto.BroadcastHistoryResponse;
 import com.sensa.notificationservice.dto.BroadcastRequest;
 import com.sensa.notificationservice.dto.BroadcastResponse;
 import com.sensa.notificationservice.dto.NotificationRequest;
@@ -11,11 +12,13 @@ import com.sensa.notificationservice.dto.kafka.EmergencyConfirmedEvent;
 import com.sensa.notificationservice.dto.kafka.NotificationDeliveryEvent;
 import com.sensa.notificationservice.dto.kafka.UserLocationResponse;
 import com.sensa.notificationservice.entity.Notification;
+import com.sensa.notificationservice.entity.OperatorBroadcast;
 import com.sensa.notificationservice.exception.NotificationNotFoundException;
 import com.sensa.notificationservice.mapper.NotificationMapper;
 import com.sensa.notificationservice.model.NotificationChannel;
 import com.sensa.notificationservice.model.NotificationStatus;
 import com.sensa.notificationservice.repository.NotificationRepository;
+import com.sensa.notificationservice.repository.OperatorBroadcastRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -33,6 +36,7 @@ import java.util.UUID;
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final OperatorBroadcastRepository operatorBroadcastRepository;
     private final NotificationMapper notificationMapper;
     private final RabbitTemplate rabbitTemplate;
     private final TemplateServiceClient templateServiceClient;
@@ -61,6 +65,7 @@ public class NotificationService {
         String deliveryContent = request.message().replace("\n", "<br>");
         int alerted = 0;
         int deliveries = 0;
+        int filtered = 0;
 
         for (UserLocationResponse recipient : recipients) {
             boolean push = recipient.push();
@@ -68,6 +73,7 @@ public class NotificationService {
             boolean sms = recipient.sms();
 
             if (!push && !email && !sms) {
+                filtered++;
                 continue;
             }
 
@@ -100,8 +106,55 @@ public class NotificationService {
             }
         }
 
-        log.info("Operator broadcast finished: recipients={}, deliveries={}", alerted, deliveries);
-        return new BroadcastResponse(alerted, deliveries);
+        OperatorBroadcast record = OperatorBroadcast.builder()
+                .alertType(normalize(request.alertType(), "OTHER"))
+                .title(request.title())
+                .message(request.message())
+                .audience(normalize(request.audience(), areaTargeted ? "LOCATION" : "ALL"))
+                .city(request.city())
+                .street(request.street())
+                .radiusKm(request.radiusKm())
+                .recipients(alerted)
+                .deliveries(deliveries)
+                .filtered(filtered)
+                .errors(0)
+                .status(alerted > 0 ? "DELIVERED" : "FILTERED")
+                .build();
+        record = operatorBroadcastRepository.save(record);
+
+        log.info("Operator broadcast finished: recipients={}, deliveries={}, filtered={}",
+                alerted, deliveries, filtered);
+        return new BroadcastResponse(record.getId(), alerted, deliveries, filtered, 0);
+    }
+
+    public List<BroadcastHistoryResponse> getBroadcastHistory() {
+        return operatorBroadcastRepository.findTop20ByOrderByCreatedAtDesc()
+                .stream()
+                .map(this::toHistoryResponse)
+                .toList();
+    }
+
+    private BroadcastHistoryResponse toHistoryResponse(OperatorBroadcast broadcast) {
+        return BroadcastHistoryResponse.builder()
+                .id(broadcast.getId())
+                .alertType(broadcast.getAlertType())
+                .title(broadcast.getTitle())
+                .message(broadcast.getMessage())
+                .audience(broadcast.getAudience())
+                .city(broadcast.getCity())
+                .street(broadcast.getStreet())
+                .radiusKm(broadcast.getRadiusKm())
+                .recipients(broadcast.getRecipients())
+                .deliveries(broadcast.getDeliveries())
+                .filtered(broadcast.getFiltered())
+                .errors(broadcast.getErrors())
+                .status(broadcast.getStatus())
+                .createdAt(broadcast.getCreatedAt())
+                .build();
+    }
+
+    private String normalize(String value, String fallback) {
+        return value == null || value.isBlank() ? fallback : value.trim().toUpperCase();
     }
 
     @Cacheable(cacheNames = "notifications", key = "#userId")
