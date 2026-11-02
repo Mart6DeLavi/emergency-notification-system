@@ -3789,3 +3789,170 @@ body {
   font-weight: 700;
   white-space: nowrap;
 }
+
+/* Broadcast phone preview — match the reference mockup. */
+.notify-slider .p-slider-handle,
+.notify-slider .p-slider-handle:focus {
+  border: 0;
+  background: var(--success);
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.18);
+}
+
+.phone-frame {
+  width: min(100%, 322px);
+  min-height: 528px;
+  padding: 8px 10px 18px;
+  border: 10px solid #15181f;
+  border-radius: 50px;
+  background: #05070c;
+  box-shadow:
+    0 0 0 1px #39404b,
+    0 34px 70px rgba(0, 0, 0, 0.6),
+    inset 0 0 0 1px #000;
+  overflow: visible;
+}
+
+.phone-frame .phone-wallpaper {
+  border-radius: 39px;
+  overflow: hidden;
+}
+
+/* Side buttons of the iPhone body. */
+.phone-frame::before {
+  content: "";
+  position: absolute;
+  top: 118px;
+  left: -14px;
+  width: 4px;
+  height: 36px;
+  border-radius: 4px 0 0 4px;
+  background: #262b33;
+  box-shadow:
+    0 50px 0 #262b33,
+    0 92px 0 #262b33;
+  transform: none;
+}
+
+.phone-frame::after {
+  content: "";
+  position: absolute;
+  top: 156px;
+  right: -14px;
+  width: 4px;
+  height: 64px;
+  border-radius: 0 4px 4px 0;
+  background: #262b33;
+}
+
+.phone-frame--android {
+  width: min(100%, 322px);
+  min-height: 518px;
+  padding: 8px 10px 16px;
+  border: 9px solid #15181f;
+  border-radius: 34px;
+}
+
+.phone-frame--android::before,
+.phone-frame--android::after {
+  content: none;
+}
+
+.phone-frame .phone-island {
+  top: 15px;
+  width: 86px;
+  height: 24px;
+}
+
+.phone-frame .phone-statusbar {
+  z-index: 6;
+  padding: 11px 8px 0;
+  font-size: 10px;
+}
+
+.phone-frame .phone-statusbar-icons {
+  gap: 6px;
+  font-size: 9px;
+}
+
+.phone-frame .phone-clock {
+  margin: 64px 0 46px;
+}
+
+.phone-frame .phone-clock strong {
+  font-size: 52px;
+  font-weight: 300;
+}
+
+.phone-frame .phone-clock span {
+  font-size: 11px;
+}
+
+.phone-frame .phone-notification {
+  gap: 10px;
+  padding: 11px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 17px;
+  background: rgba(8, 13, 24, 0.7);
+  color: #f8fafc;
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(18px);
+}
+
+.phone-frame .phone-notification-icon {
+  flex-basis: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #0f172a;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.phone-frame .phone-notification-meta {
+  color: #f8fafc;
+  font-size: 10px;
+}
+
+.phone-frame .phone-notification-meta small {
+  color: rgba(226, 232, 240, 0.55);
+}
+
+.phone-frame .phone-notification-body strong {
+  color: #fff;
+  font-size: 12.5px;
+}
+
+.phone-frame .phone-notification-body p {
+  color: rgba(226, 232, 240, 0.72);
+  font-size: 10.5px;
+}
+
+.phone-frame .phone-home-indicator {
+  bottom: 7px;
+  width: 102px;
+  height: 4px;
+}
+
+.phone-frame--android .phone-notification {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(8, 13, 24, 0.72);
+}
+
+.phone-frame--android .phone-notification-body strong,
+.phone-frame--android .phone-notification-meta {
+  color: #f8fafc;
+}
+
+.phone-frame--android .phone-notification-body p {
+  color: rgba(226, 232, 240, 0.72);
+}
+
+.phone-frame--android .phone-notification-meta small {
+  color: rgba(226, 232, 240, 0.55);
+}
+
+.phone-frame--android .phone-notification-icon {
+  background: #f8fafc;
+  color: #0f172a;
+}
