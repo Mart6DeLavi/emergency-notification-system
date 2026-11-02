@@ -2,6 +2,7 @@ package com.sensa.filesystemservice.service
 
 import com.sensa.filesystemservice.dto.FileLinkRequest
 import com.sensa.filesystemservice.dto.FileModeratedEvent
+import com.sensa.filesystemservice.dto.FileDownloadUrlResponse
 import com.sensa.filesystemservice.dto.FileResponse
 import com.sensa.filesystemservice.dto.FileUploadResult
 import com.sensa.filesystemservice.entity.FileEntity
@@ -19,8 +20,11 @@ import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
+import software.amazon.awssdk.services.s3.presigner.S3Presigner
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest
 import java.nio.file.Files
 import java.nio.file.Path
+import java.time.Duration
 import java.util.UUID
 
 @Service
@@ -29,6 +33,7 @@ class FileService(
     private val fileMapper: FileMapper,
     private val moderationService: ModerationService,
     private val s3Client: S3Client,
+    private val s3Presigner: S3Presigner,
     private val kafkaTemplate: KafkaTemplate<String, FileModeratedEvent>
 ) {
 
@@ -162,6 +167,27 @@ class FileService(
         val entity = fileRepository.findByIdAndUserId(id, userId)
             ?: throw NoSuchElementException("File with id $id not found")
         return fileMapper.toResponse(entity)
+    }
+
+    fun createDownloadUrl(fileId: Long): FileDownloadUrlResponse {
+        val entity = fileRepository.findById(fileId)
+            .orElseThrow { NoSuchElementException("File with id $fileId not found") }
+
+        val storedUrl = entity.url
+            ?: throw NoSuchElementException("File with id $fileId has no stored object")
+
+        val key = storedUrl.substringAfter(".amazonaws.com/")
+        if (key.isBlank()) {
+            throw IllegalStateException("Cannot resolve S3 key for file id $fileId")
+        }
+
+        val request = GetObjectPresignRequest.builder()
+            .signatureDuration(Duration.ofMinutes(15))
+            .getObjectRequest { it.bucket(bucket).key(key) }
+            .build()
+
+        val url = s3Presigner.presignGetObject(request).url().toString()
+        return FileDownloadUrlResponse(url, 900)
     }
 
     @Transactional
