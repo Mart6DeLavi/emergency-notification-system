@@ -21,6 +21,8 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import io.r2dbc.spi.Row;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -174,17 +176,56 @@ public class UserService {
         return userEntityRepository.save(entity);
     }
 
+    private static final String RECIPIENT_SELECT = """
+            SELECT u.user_id,
+                   m.email,
+                   m.phone_number,
+                   m.first_name,
+                   m.last_name,
+                   m.device_token,
+                   n.push,
+                   n.email_enabled,
+                   n.sms
+            FROM users u
+            JOIN user_main_data m ON m.user_entity_id = u.id
+            JOIN user_notification_settings n ON n.user_entity_id = u.id
+            """;
+
     public Flux<UserLocationResponse> findUsersByLocation(String city, String street) {
         log.info("Fetching users by location: city={}, street={}", city, street);
-        if (street == null || street.isBlank()) {
-            return userLocationDataRepository.findUsersByCity(city);
+
+        boolean hasStreet = street != null && !street.isBlank();
+        String sql = RECIPIENT_SELECT
+                + " JOIN user_location_data l ON l.user_entity_id = u.id"
+                + " WHERE LOWER(l.city) = LOWER(:city)"
+                + (hasStreet ? " AND LOWER(l.street) = LOWER(:street)" : "");
+
+        var spec = databaseClient.sql(sql).bind("city", city);
+        if (hasStreet) {
+            spec = spec.bind("street", street);
         }
-        return userLocationDataRepository.findUsersByCityAndStreet(city, street);
+        return spec.map((row, metadata) -> mapRecipient(row)).all();
     }
 
     public Flux<UserLocationResponse> findAllRecipients() {
         log.info("Fetching all notification recipients");
-        return userLocationDataRepository.findAllRecipients();
+        return databaseClient.sql(RECIPIENT_SELECT)
+                .map((row, metadata) -> mapRecipient(row))
+                .all();
+    }
+
+    private UserLocationResponse mapRecipient(Row row) {
+        return new UserLocationResponse(
+                row.get("user_id", UUID.class),
+                row.get("email", String.class),
+                row.get("phone_number", String.class),
+                row.get("first_name", String.class),
+                row.get("last_name", String.class),
+                row.get("device_token", String.class),
+                Boolean.TRUE.equals(row.get("push", Boolean.class)),
+                Boolean.TRUE.equals(row.get("email_enabled", Boolean.class)),
+                Boolean.TRUE.equals(row.get("sms", Boolean.class))
+        );
     }
 
     public Mono<Void> delete(UUID userId) {
