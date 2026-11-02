@@ -1,76 +1,91 @@
 <script setup lang="ts">
-import { useToast } from 'primevue/usetoast'
-import type { Emergency, EmergencyStatus, RawEmergency } from '~/types'
+import type { Emergency, EmergencyStatus } from '~/types'
 
 const api = useApi()
 const toast = useToast()
-const router = useRouter()
+const search = useState('global-search', () => '')
 
 const emergencies = ref<Emergency[]>([])
-const loading = ref(true)
-const statusFilter = ref<EmergencyStatus | null>(null)
-const search = ref('')
+const loading = ref(false)
+const activeTab = ref<'ALL' | 'OPEN' | 'CONFIRMED' | 'REJECTED'>('ALL')
 
-const statusOptions: { label: string; value: EmergencyStatus | null }[] = [
-  { label: 'All statuses', value: null },
-  { label: 'Reported', value: 'REPORTED' },
-  { label: 'Under review', value: 'UNDER_REVIEW' },
-  { label: 'Confirmed', value: 'CONFIRMED' },
-  { label: 'Broadcast', value: 'BROADCAST' },
-  { label: 'Rejected', value: 'REJECTED' },
-]
-
-const stats = computed(() => ({
-  total: emergencies.value.length,
-  open: emergencies.value.filter(
-    (e) => e.status === 'REPORTED' || e.status === 'UNDER_REVIEW',
-  ).length,
-  confirmed: emergencies.value.filter(
-    (e) => e.status === 'CONFIRMED' || e.status === 'BROADCAST',
-  ).length,
-  rejected: emergencies.value.filter((e) => e.status === 'REJECTED').length,
-}))
+const tabs = computed(() => [
+  { key: 'ALL' as const, label: 'All reports', count: emergencies.value.length },
+  { key: 'OPEN' as const, label: 'Open', count: emergencies.value.filter(isOpen).length },
+  { key: 'CONFIRMED' as const, label: 'Confirmed', count: emergencies.value.filter(isConfirmed).length },
+  { key: 'REJECTED' as const, label: 'Rejected', count: emergencies.value.filter((item) => item.status === 'REJECTED').length },
+])
 
 const filtered = computed(() => {
   const term = search.value.trim().toLowerCase()
-  return emergencies.value.filter((e) => {
-    if (statusFilter.value && e.status !== statusFilter.value) return false
+  return emergencies.value.filter((item) => {
+    const matchesTab =
+      activeTab.value === 'ALL' ||
+      (activeTab.value === 'OPEN' && isOpen(item)) ||
+      (activeTab.value === 'CONFIRMED' && isConfirmed(item)) ||
+      (activeTab.value === 'REJECTED' && item.status === 'REJECTED')
+
+    if (!matchesTab) return false
     if (!term) return true
-    return [e.title, e.city, e.street, e.country].some((v) =>
-      (v ?? '').toLowerCase().includes(term),
-    )
+
+    return [item.title, item.description, item.city, item.street, item.country]
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(term))
   })
 })
 
-function statusClass(status: EmergencyStatus) {
-  return `status status--${status.toLowerCase()}`
+function isOpen(item: Emergency) {
+  return item.status === 'REPORTED' || item.status === 'UNDER_REVIEW'
+}
+
+function isConfirmed(item: Emergency) {
+  return item.status === 'CONFIRMED' || item.status === 'BROADCAST'
+}
+
+const AVATAR_COLORS = ['#f9c97c', '#a7c7e7', '#cdb4db', '#9ae6b4', '#f7a8a8', '#fde68a', '#bfdbfe']
+
+function avatarColor(id: number) {
+  return AVATAR_COLORS[Math.abs(id) % AVATAR_COLORS.length]
+}
+
+function initials(item: Emergency) {
+  return (item.title || 'E').trim().charAt(0).toUpperCase()
+}
+
+function location(item: Emergency) {
+  return [item.street, item.city, item.country].filter(Boolean).join(', ') || 'No location'
+}
+
+function openEmergency(item: Emergency) {
+  navigateTo(`/emergencies/${item.id}`)
+}
+
+async function copyId(item: Emergency) {
+  try {
+    await navigator.clipboard.writeText(String(item.id))
+    toast.add({ severity: 'success', summary: 'Copied', detail: `Report #${item.id}`, life: 1800 })
+  } catch {
+    toast.add({ severity: 'error', summary: 'Could not copy', detail: 'Clipboard is unavailable.', life: 2200 })
+  }
 }
 
 async function load() {
+  loading.value = true
   try {
-    const raw = await api<RawEmergency[]>('/api/v1/emergencies')
-    emergencies.value = raw.map(normalizeEmergency)
-  } catch (e) {
-    toast.add({
-      severity: 'error',
-      summary: 'Failed to load emergencies',
-      detail: (e as Error).message,
-      life: 4000,
-    })
+    emergencies.value = await api<Emergency[]>('/api/v1/emergencies')
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Could not load emergencies.'
+    toast.add({ severity: 'error', summary: 'Load failed', detail: message, life: 3500 })
   } finally {
     loading.value = false
   }
 }
 
-function openEmergency(row: Emergency) {
-  router.push(`/emergencies/${row.id}`)
-}
-
-let timer: ReturnType<typeof setInterval> | null = null
+let timer: ReturnType<typeof setInterval> | undefined
 
 onMounted(() => {
   load()
-  timer = setInterval(load, 15000)
+  timer = setInterval(load, 20000)
 })
 
 onUnmounted(() => {
@@ -79,104 +94,91 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div>
-    <div class="page-header">
+  <section>
+    <div class="page-head">
       <div>
+        <p class="eyebrow">Operations</p>
         <h1 class="page-title">Emergencies</h1>
-        <p class="page-subtitle">Reports awaiting verification and broadcast</p>
+        <p class="page-subtitle">Incoming reports from the field, newest first.</p>
       </div>
-
-      <div class="page-actions">
-        <div class="search-wrap">
-          <i class="pi pi-search" />
-          <InputText
-            v-model="search"
-            class="search-input"
-            placeholder="Search title, city, street…"
-          />
-        </div>
-        <Select
-          v-model="statusFilter"
-          :options="statusOptions"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="All statuses"
-        />
-        <Button
-          icon="pi pi-refresh"
-          label="Refresh"
-          severity="secondary"
-          outlined
-          @click="load"
-        />
-      </div>
+      <Button label="Refresh" icon="pi pi-refresh" severity="secondary" outlined :loading="loading" @click="load" />
     </div>
 
-    <div class="stats-grid">
-      <div class="panel stat">
-        <div class="stat-label">Total reports</div>
-        <div class="stat-value">{{ stats.total }}</div>
-      </div>
-      <div class="panel stat">
-        <div class="stat-label">Open</div>
-        <div class="stat-value warning">{{ stats.open }}</div>
-      </div>
-      <div class="panel stat">
-        <div class="stat-label">Confirmed</div>
-        <div class="stat-value success">{{ stats.confirmed }}</div>
-      </div>
-      <div class="panel stat">
-        <div class="stat-label">Rejected</div>
-        <div class="stat-value danger">{{ stats.rejected }}</div>
-      </div>
+    <div class="tabs">
+      <button
+        v-for="tab in tabs"
+        :key="tab.key"
+        type="button"
+        class="tab"
+        :class="{ active: activeTab === tab.key }"
+        @click="activeTab = tab.key"
+      >
+        {{ tab.label }}
+        <span class="tab-count">{{ tab.count }}</span>
+      </button>
     </div>
 
-    <div class="panel">
-      <div class="panel-header">
-        <h2 class="panel-title">All reports</h2>
-        <span class="muted-sm">{{ filtered.length }} shown</span>
+    <div class="table-card">
+      <div v-if="loading && !emergencies.length" class="state">
+        <i class="pi pi-spin pi-spinner" />
+        <span>Loading reports…</span>
       </div>
 
-      <div v-if="loading" class="panel-body muted">Loading…</div>
-      <div v-else-if="!filtered.length" class="panel-body attachment-empty">
-        No emergencies found.
+      <div v-else-if="!filtered.length" class="state">
+        <i class="pi pi-inbox" />
+        <strong>No reports found</strong>
+        <span>Try a different tab or clear the search.</span>
       </div>
 
-      <table v-else class="table">
+      <table v-else class="data-table">
         <thead>
           <tr>
-            <th>Status</th>
             <th>Emergency</th>
             <th>Location</th>
+            <th>Status</th>
             <th>Reported</th>
             <th />
           </tr>
         </thead>
         <tbody>
-          <tr
-            v-for="row in filtered"
-            :key="row.id"
-            @click="openEmergency(row)"
-          >
+          <tr v-for="item in filtered" :key="item.id" @click="openEmergency(item)">
             <td>
-              <span :class="statusClass(row.status)">{{ statusLabel(row.status) }}</span>
-            </td>
-            <td>
-              <div class="row-title">{{ row.title }}</div>
-              <div class="row-sub">#{{ row.id }}</div>
+              <div class="row-main">
+                <span class="row-avatar" :style="{ background: avatarColor(item.id) }">{{ initials(item) }}</span>
+                <span class="row-title-wrap">
+                  <span class="row-title">{{ item.title }}</span>
+                  <span class="row-sub">#{{ item.id }} · {{ item.files?.length || 0 }} attachments</span>
+                </span>
+              </div>
             </td>
             <td>
-              {{ [row.city, row.street].filter(Boolean).join(', ') || '—' }}
+              <span class="row-location">
+                <i class="pi pi-map-marker" />
+                {{ location(item) }}
+              </span>
             </td>
-            <td class="muted-sm">
-              {{ formatDateTime(row.alarmTimestamp || row.createdAt) }}
+            <td>
+              <span class="status" :class="`status--${item.status.toLowerCase()}`">
+                {{ statusLabel(item.status as EmergencyStatus) }}
+              </span>
             </td>
-            <td style="text-align: right">
-              <i class="pi pi-chevron-right muted" />
+            <td><span class="row-time">{{ formatDateTime(item.createdAt) }}</span></td>
+            <td class="cell-actions" @click.stop>
+              <details class="row-menu">
+                <summary><i class="pi pi-ellipsis-v" /></summary>
+                <div class="row-menu-pop">
+                  <button type="button" @click="openEmergency(item)">
+                    <i class="pi pi-arrow-right" /> Open report
+                  </button>
+                  <button type="button" @click="copyId(item)">
+                    <i class="pi pi-copy" /> Copy ID
+                  </button>
+                </div>
+              </details>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
-  </div>
+  </section>
 </template>
