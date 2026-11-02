@@ -2,6 +2,12 @@ spring:
   application:
     name: user-data-management-service
 
+  datasource:
+    url: jdbc:postgresql://localhost:5432/Sensa_User_Data_Management_Service
+    username: ${POSTGRES_USERNAME}
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
   r2dbc:
     url: r2dbc:postgresql://localhost:5432/Sensa_User_Data_Management_Service
     username: ${POSTGRES_USERNAME}
