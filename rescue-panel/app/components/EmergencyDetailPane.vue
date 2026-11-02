@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useToast } from 'primevue/usetoast'
 import { useConfirm } from 'primevue/useconfirm'
-import type { Emergency, EmergencyStatus, RawEmergency } from '~/types'
+import type { Emergency, EmergencyStatus, FileResponse, RawEmergency } from '~/types'
 
 const props = defineProps<{
   emergencyId: number
@@ -19,6 +19,7 @@ const emergency = ref<Emergency | null>(null)
 const loading = ref(true)
 const updating = ref(false)
 const attachmentUrls = ref<Record<number, string>>({})
+const attachmentDetails = ref<Record<number, FileResponse>>({})
 const previewVisible = ref(false)
 const preview = ref<{ url: string; type: 'image' | 'video'; name: string } | null>(null)
 
@@ -62,13 +63,21 @@ async function loadAttachments() {
 
   await Promise.all(
     files.map(async (file) => {
-      if (attachmentUrls.value[file.fileId]) return
+      const needUrl = !attachmentUrls.value[file.fileId]
+      const needDetails = !attachmentDetails.value[file.fileId]
+      if (!needUrl && !needDetails) return
 
       try {
-        const response = await api<{ url: string }>(
-          `/api/v1/files/${file.fileId}/url`,
-        )
-        attachmentUrls.value[file.fileId] = response.url
+        const [urlResponse, details] = await Promise.all([
+          needUrl
+            ? api<{ url: string }>(`/api/v1/files/${file.fileId}/url`)
+            : Promise.resolve(null),
+          needDetails
+            ? api<FileResponse>(`/api/v1/files/${file.fileId}`)
+            : Promise.resolve(null),
+        ])
+        if (urlResponse) attachmentUrls.value[file.fileId] = urlResponse.url
+        if (details) attachmentDetails.value[file.fileId] = details
       } catch {
         // Keep the placeholder; a later refresh will retry.
       }
@@ -80,6 +89,36 @@ function isImage(url: string) {
   const clean = url.split('?')[0] ?? ''
   const extension = clean.split('.').pop()?.toLowerCase() ?? ''
   return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic'].includes(extension)
+}
+
+function moderationLabel(fileId: number) {
+  const status = attachmentDetails.value[fileId]?.moderationStatus
+  if (status === 'APPROVED') return 'AI approved'
+  if (status === 'REJECTED') return 'AI rejected'
+  if (status === 'PENDING') return 'AI pending'
+  return 'AI check unavailable'
+}
+
+function moderationClass(fileId: number) {
+  const status = attachmentDetails.value[fileId]?.moderationStatus
+  if (status === 'APPROVED') return 'ai-pill--approved'
+  if (status === 'REJECTED') return 'ai-pill--rejected'
+  if (status === 'PENDING') return 'ai-pill--pending'
+  return 'ai-pill--unknown'
+}
+
+function confidenceText(fileId: number) {
+  const value = attachmentDetails.value[fileId]?.moderationConfidence
+  return typeof value === 'number' ? `${value.toFixed(1)}%` : '—'
+}
+
+function confidenceWidth(fileId: number) {
+  const value = attachmentDetails.value[fileId]?.moderationConfidence ?? 0
+  return `${Math.min(100, Math.max(0, value))}%`
+}
+
+function attachmentName(fileId: number) {
+  return attachmentDetails.value[fileId]?.filename || `Attachment #${fileId}`
 }
 
 function statusClass(status: EmergencyStatus) {
@@ -215,74 +254,63 @@ onUnmounted(() => {
       </div>
 
       <div class="detail-grid">
-        <div>
-          <div class="panel mb-2">
-            <div class="panel-header">
-              <h2 class="panel-title">Description</h2>
+        <div class="detail-main">
+          <section class="panel">
+            <div class="panel-head">
+              <h2 class="panel-title">Overview</h2>
+              <span class="muted-sm">Incident report</span>
             </div>
-            <div class="panel-body">
-              <p class="detail-description">
-                {{ emergency.description || 'No description provided.' }}
-              </p>
-            </div>
-          </div>
+            <p class="detail-description">
+              {{ emergency.description || 'No description provided.' }}
+            </p>
+          </section>
 
-          <div class="panel mb-2">
-            <div class="panel-header">
-              <h2 class="panel-title">Location</h2>
-            </div>
-            <div class="panel-body">
-              <dl class="kv">
-                <dt>Address</dt>
-                <dd>{{ location || '—' }}</dd>
-                <dt>City</dt>
-                <dd>{{ emergency.city || '—' }}</dd>
-                <dt>Street</dt>
-                <dd>{{ emergency.street || '—' }}</dd>
-                <dt>Country</dt>
-                <dd>{{ emergency.country || '—' }}</dd>
-              </dl>
-            </div>
-          </div>
-
-          <div class="panel">
-            <div class="panel-header">
+          <section class="panel">
+            <div class="panel-head">
               <h2 class="panel-title">Status timeline</h2>
             </div>
-            <div class="panel-body">
-              <div v-if="emergency.status === 'REJECTED'" class="attachment-empty">
-                This report was rejected by the rescue service.
-              </div>
-              <div v-else class="timeline">
-                <div
-                  v-for="(status, index) in flow"
-                  :key="status"
-                  class="timeline-item"
-                  :class="{ done: index < currentIndex, current: index === currentIndex }"
-                >
-                  <span class="timeline-dot" />
-                  <span class="timeline-label">{{ statusLabel(status) }}</span>
-                </div>
+            <div v-if="emergency.status === 'REJECTED'" class="attachment-empty">
+              This report was rejected by the rescue service.
+            </div>
+            <div v-else class="timeline">
+              <div
+                v-for="(status, index) in flow"
+                :key="status"
+                class="timeline-item"
+                :class="{ done: index < currentIndex, current: index === currentIndex }"
+              >
+                <span class="timeline-dot" />
+                <span class="timeline-label">{{ statusLabel(status) }}</span>
               </div>
             </div>
-          </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <h2 class="panel-title">Location map</h2>
+            </div>
+            <LocationMap
+              :city="emergency.city"
+              :street="emergency.street"
+              :country="emergency.country"
+              :title="emergency.title"
+            />
+          </section>
         </div>
 
-        <div>
-          <div class="panel mb-2">
-            <div class="panel-header">
+        <aside class="detail-side">
+          <section class="panel">
+            <div class="panel-head">
               <h2 class="panel-title">Attachments</h2>
               <span class="muted-sm">{{ emergency.files?.length ?? 0 }}</span>
             </div>
-            <div class="panel-body">
-              <div v-if="emergency.files?.length" class="attachment-grid">
-                <button
-                  v-for="file in emergency.files"
-                  :key="file.fileId"
-                  type="button"
-                  class="attachment-tile"
-                  @click="openPreview(file)"
-                >
+            <div v-if="emergency.files?.length" class="attachment-grid">
+              <article
+                v-for="file in emergency.files"
+                :key="file.fileId"
+                class="attachment-card"
+              >
+                <button type="button" class="attachment-media" @click="openPreview(file)">
                   <img
                     v-if="isImage(file.url) && attachmentUrls[file.fileId]"
                     :src="attachmentUrls[file.fileId]"
@@ -293,43 +321,56 @@ onUnmounted(() => {
                       :class="attachmentUrls[file.fileId] ? 'pi pi-play-circle' : 'pi pi-spin pi-spinner'"
                     />
                   </div>
-                  <span class="attachment-label">#{{ file.fileId }}</span>
                 </button>
-              </div>
-              <div v-else class="attachment-empty">No attachments uploaded.</div>
+                <div class="attachment-info">
+                  <div class="attachment-name" :title="attachmentName(file.fileId)">
+                    {{ attachmentName(file.fileId) }}
+                  </div>
+                  <div class="attachment-ai-row">
+                    <span class="ai-pill" :class="moderationClass(file.fileId)">
+                      {{ moderationLabel(file.fileId) }}
+                    </span>
+                    <span class="attachment-confidence">{{ confidenceText(file.fileId) }}</span>
+                  </div>
+                  <div class="confidence-bar" aria-hidden="true">
+                    <span :style="{ width: confidenceWidth(file.fileId) }" />
+                  </div>
+                </div>
+              </article>
             </div>
-          </div>
+            <div v-else class="attachment-empty">No attachments uploaded.</div>
+          </section>
 
-          <div class="panel">
-            <div class="panel-header">
+          <section class="panel">
+            <div class="panel-head">
+              <h2 class="panel-title">Location</h2>
+            </div>
+            <dl class="kv">
+              <dt>Address</dt>
+              <dd>{{ location || '—' }}</dd>
+              <dt>City</dt>
+              <dd>{{ emergency.city || '—' }}</dd>
+              <dt>Street</dt>
+              <dd>{{ emergency.street || '—' }}</dd>
+              <dt>Country</dt>
+              <dd>{{ emergency.country || '—' }}</dd>
+            </dl>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
               <h2 class="panel-title">Report</h2>
             </div>
-            <div class="panel-body">
-              <dl class="kv">
-                <dt>Report ID</dt>
-                <dd>#{{ emergency.id }}</dd>
-                <dt>Reporter</dt>
-                <dd class="mono">{{ emergency.userId }}</dd>
-                <dt>Created</dt>
-                <dd>{{ formatDateTime(emergency.createdAt) }}</dd>
-              </dl>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="panel mt-2">
-        <div class="panel-header">
-          <h2 class="panel-title">Location map</h2>
-        </div>
-        <div class="panel-body">
-          <LocationMap
-            :city="emergency.city"
-            :street="emergency.street"
-            :country="emergency.country"
-            :title="emergency.title"
-          />
-        </div>
+            <dl class="kv">
+              <dt>Report ID</dt>
+              <dd>#{{ emergency.id }}</dd>
+              <dt>Reporter</dt>
+              <dd class="mono">{{ emergency.userId }}</dd>
+              <dt>Created</dt>
+              <dd>{{ formatDateTime(emergency.createdAt) }}</dd>
+            </dl>
+          </section>
+        </aside>
       </div>
     </template>
 

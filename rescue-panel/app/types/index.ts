@@ -72,3 +72,17 @@ export interface TokenValidationResponse {
   userId: string | null
   email: string | null
 }
+
+export type ModerationStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
+
+/** File metadata returned by filesystem-service (camelCase JSON). */
+export interface FileResponse {
+  id: number
+  userId: string
+  url: string | null
+  filename: string
+  emergencySituationId: number | null
+  moderationStatus: ModerationStatus
+  moderationConfidence: number | null
+  createdAt: string
+}
