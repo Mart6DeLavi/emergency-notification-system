@@ -31,4 +31,12 @@ public class UserDataServiceClient {
         UserLocationResponse[] body = response.getBody();
         return body == null ? List.of() : Arrays.asList(body);
     }
+
+    public List<UserLocationResponse> getAllRecipients() {
+        ResponseEntity<UserLocationResponse[]> response =
+                restTemplate.getForEntity(userDataServiceUrl + "/api/v1/users/recipients", UserLocationResponse[].class);
+
+        UserLocationResponse[] body = response.getBody();
+        return body == null ? List.of() : Arrays.asList(body);
+    }
 }

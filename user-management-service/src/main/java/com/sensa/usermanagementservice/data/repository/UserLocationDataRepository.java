@@ -53,4 +53,20 @@ public interface UserLocationDataRepository extends ReactiveCrudRepository<UserL
             WHERE LOWER(l.city) = LOWER(:city)
             """)
     Flux<UserLocationResponse> findUsersByCity(String city);
+
+    @Query("""
+            SELECT u.user_id AS user_id,
+                   m.email AS email,
+                   m.phone_number AS phone_number,
+                   m.first_name AS first_name,
+                   m.last_name AS last_name,
+                   m.device_token AS device_token,
+                   n.push AS push,
+                   n.email_enabled AS email_enabled,
+                   n.sms AS sms
+            FROM users u
+            JOIN user_main_data m ON m.user_entity_id = u.id
+            JOIN user_notification_settings n ON n.user_entity_id = u.id
+            """)
+    Flux<UserLocationResponse> findAllRecipients();
 }

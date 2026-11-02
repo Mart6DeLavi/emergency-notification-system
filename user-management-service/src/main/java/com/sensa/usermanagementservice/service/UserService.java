@@ -182,6 +182,11 @@ public class UserService {
         return userLocationDataRepository.findUsersByCityAndStreet(city, street);
     }
 
+    public Flux<UserLocationResponse> findAllRecipients() {
+        log.info("Fetching all notification recipients");
+        return userLocationDataRepository.findAllRecipients();
+    }
+
     public Mono<Void> delete(UUID userId) {
         log.info("Deleting user: userId={}", userId);
 

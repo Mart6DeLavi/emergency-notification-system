@@ -49,6 +49,15 @@ public class UserController {
         return userService.findUsersByLocation(city, street);
     }
 
+    @Operation(summary = "Get all recipients", description = "Returns all users with notification settings for operator broadcasts")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "List of recipients")
+    })
+    @GetMapping("/recipients")
+    public Flux<UserLocationResponse> getAllRecipients() {
+        return userService.findAllRecipients();
+    }
+
     @Operation(summary = "Update user", description = "Updates user data by userId")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "User data updated"),

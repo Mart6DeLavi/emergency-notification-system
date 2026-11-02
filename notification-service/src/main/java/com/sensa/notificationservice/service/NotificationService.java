@@ -3,6 +3,8 @@ package com.sensa.notificationservice.service;
 import com.sensa.notificationservice.client.TemplateServiceClient;
 import com.sensa.notificationservice.client.UserDataServiceClient;
 import com.sensa.notificationservice.config.RabbitMQConfig;
+import com.sensa.notificationservice.dto.BroadcastRequest;
+import com.sensa.notificationservice.dto.BroadcastResponse;
 import com.sensa.notificationservice.dto.NotificationRequest;
 import com.sensa.notificationservice.dto.NotificationResponse;
 import com.sensa.notificationservice.dto.kafka.EmergencyConfirmedEvent;
@@ -11,6 +13,8 @@ import com.sensa.notificationservice.dto.kafka.UserLocationResponse;
 import com.sensa.notificationservice.entity.Notification;
 import com.sensa.notificationservice.exception.NotificationNotFoundException;
 import com.sensa.notificationservice.mapper.NotificationMapper;
+import com.sensa.notificationservice.model.NotificationChannel;
+import com.sensa.notificationservice.model.NotificationStatus;
 import com.sensa.notificationservice.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +46,62 @@ public class NotificationService {
         entity = notificationRepository.save(entity);
 
         return notificationMapper.toResponse(entity);
+    }
+
+    @CacheEvict(cacheNames = "notifications", allEntries = true)
+    public BroadcastResponse broadcast(BroadcastRequest request) {
+        log.info("Operator broadcast: title={}, city={}, street={}",
+                request.title(), request.city(), request.street());
+
+        boolean areaTargeted = request.city() != null && !request.city().isBlank();
+        List<UserLocationResponse> recipients = areaTargeted
+                ? userDataServiceClient.getRecipientsByLocation(request.city(), request.street())
+                : userDataServiceClient.getAllRecipients();
+
+        String deliveryContent = request.message().replace("\n", "<br>");
+        int alerted = 0;
+        int deliveries = 0;
+
+        for (UserLocationResponse recipient : recipients) {
+            boolean push = recipient.push();
+            boolean email = recipient.emailEnabled();
+            boolean sms = recipient.sms();
+
+            if (!push && !email && !sms) {
+                continue;
+            }
+
+            NotificationChannel primary = push
+                    ? NotificationChannel.PUSH
+                    : email ? NotificationChannel.EMAIL : NotificationChannel.SMS;
+
+            Notification entity = Notification.builder()
+                    .userId(recipient.userId())
+                    .templateName("operator-broadcast")
+                    .title(request.title())
+                    .content(request.message())
+                    .channel(primary)
+                    .status(NotificationStatus.PENDING)
+                    .build();
+            notificationRepository.save(entity);
+            alerted++;
+
+            if (push) {
+                sendDelivery(recipient, "PUSH", request.title(), deliveryContent);
+                deliveries++;
+            }
+            if (email) {
+                sendDelivery(recipient, "EMAIL", request.title(), deliveryContent);
+                deliveries++;
+            }
+            if (sms) {
+                sendDelivery(recipient, "SMS", request.title(), deliveryContent);
+                deliveries++;
+            }
+        }
+
+        log.info("Operator broadcast finished: recipients={}, deliveries={}", alerted, deliveries);
+        return new BroadcastResponse(alerted, deliveries);
     }
 
     @Cacheable(cacheNames = "notifications", key = "#userId")
