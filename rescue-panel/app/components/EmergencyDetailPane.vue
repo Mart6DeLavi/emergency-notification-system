@@ -39,6 +39,12 @@ const location = computed(() =>
     .join(', '),
 )
 
+const attachmentCount = computed(() => emergency.value?.files?.length ?? 0)
+
+const locationShort = computed(() =>
+  [emergency.value?.city, emergency.value?.country].filter(Boolean).join(', '),
+)
+
 async function load() {
   if (!emergency.value) loading.value = true
 
@@ -125,6 +131,30 @@ function statusClass(status: EmergencyStatus) {
   return `status status--${status.toLowerCase()}`
 }
 
+function statusFactClass(status: EmergencyStatus) {
+  if (status === 'REJECTED') return 'fact-value--danger'
+  if (status === 'CONFIRMED' || status === 'BROADCAST') return 'fact-value--success'
+  return 'fact-value--warning'
+}
+
+function timelineState(index: number) {
+  if (index < currentIndex.value) return 'Completed'
+  if (index === currentIndex.value) return 'In progress'
+  return '—'
+}
+
+function copyText(value: string, label: string) {
+  if (typeof navigator !== 'undefined' && navigator.clipboard) {
+    navigator.clipboard.writeText(value)
+  }
+  toast.add({ severity: 'success', summary: `${label} copied`, life: 1500 })
+}
+
+function downloadAttachment(fileId: number) {
+  const url = attachmentUrls.value[fileId]
+  if (url) window.open(url, '_blank')
+}
+
 function openPreview(file: { fileId: number; url: string }) {
   const url = attachmentUrls.value[file.fileId]
   if (!url) return
@@ -132,7 +162,7 @@ function openPreview(file: { fileId: number; url: string }) {
   preview.value = {
     url,
     type: isImage(file.url) ? 'image' : 'video',
-    name: `Attachment #${file.fileId}`,
+    name: attachmentName(file.fileId),
   }
   previewVisible.value = true
 }
@@ -246,18 +276,54 @@ onUnmounted(() => {
             :key="next"
             :label="statusLabel(next)"
             :severity="next === 'REJECTED' ? 'danger' : 'primary'"
-            :outlined="next !== 'CONFIRMED'"
+            :outlined="next !== 'CONFIRMED' && next !== 'REJECTED'"
             :disabled="updating"
             @click="confirmStatus(next)"
           />
         </div>
       </div>
 
-      <div class="detail-grid">
-        <div class="detail-main">
+      <div class="detail-facts grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <article class="fact-card">
+          <span class="fact-icon fact-icon--danger"><i class="pi pi-exclamation-triangle" /></span>
+          <div class="fact-body">
+            <span class="fact-label">Type</span>
+            <strong class="fact-value">{{ emergency.title }}</strong>
+          </div>
+        </article>
+
+        <article class="fact-card">
+          <span class="fact-icon fact-icon--warning"><i class="pi pi-chart-line" /></span>
+          <div class="fact-body">
+            <span class="fact-label">Status</span>
+            <strong class="fact-value" :class="statusFactClass(emergency.status)">
+              {{ statusLabel(emergency.status) }}
+            </strong>
+          </div>
+        </article>
+
+        <article class="fact-card">
+          <span class="fact-icon fact-icon--info"><i class="pi pi-paperclip" /></span>
+          <div class="fact-body">
+            <span class="fact-label">Attachments</span>
+            <strong class="fact-value">{{ attachmentCount }} file{{ attachmentCount === 1 ? '' : 's' }}</strong>
+          </div>
+        </article>
+
+        <article class="fact-card">
+          <span class="fact-icon fact-icon--success"><i class="pi pi-map-marker" /></span>
+          <div class="fact-body">
+            <span class="fact-label">Location</span>
+            <strong class="fact-value">{{ locationShort || '—' }}</strong>
+          </div>
+        </article>
+      </div>
+
+      <div class="detail-grid grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(300px,0.9fr)]">
+        <div class="detail-main flex min-w-0 flex-col gap-4">
           <section class="panel">
             <div class="panel-head">
-              <h2 class="panel-title">Overview</h2>
+              <h2 class="panel-title"><i class="pi pi-file" />Overview</h2>
               <span class="muted-sm">Incident report</span>
             </div>
             <p class="detail-description">
@@ -267,7 +333,80 @@ onUnmounted(() => {
 
           <section class="panel">
             <div class="panel-head">
-              <h2 class="panel-title">Status timeline</h2>
+              <h2 class="panel-title"><i class="pi pi-map-marker" />Location</h2>
+            </div>
+            <LocationMap
+              :city="emergency.city"
+              :street="emergency.street"
+              :country="emergency.country"
+              :title="emergency.title"
+            />
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <h2 class="panel-title"><i class="pi pi-paperclip" />Attachments</h2>
+              <span class="muted-sm">{{ attachmentCount }}</span>
+            </div>
+
+            <div v-if="emergency.files?.length" class="attachment-list">
+              <article v-for="file in emergency.files" :key="file.fileId" class="attachment-row">
+                <button type="button" class="attachment-thumb" @click="openPreview(file)">
+                  <img
+                    v-if="isImage(file.url) && attachmentUrls[file.fileId]"
+                    :src="attachmentUrls[file.fileId]"
+                    alt=""
+                  />
+                  <div v-else class="attachment-fallback">
+                    <i
+                      :class="attachmentUrls[file.fileId] ? 'pi pi-play-circle' : 'pi pi-spin pi-spinner'"
+                    />
+                  </div>
+                </button>
+
+                <div class="attachment-row-body">
+                  <div class="attachment-row-name" :title="attachmentName(file.fileId)">
+                    {{ attachmentName(file.fileId) }}
+                  </div>
+                  <div class="attachment-row-meta">
+                    <span class="ai-pill" :class="moderationClass(file.fileId)">
+                      {{ moderationLabel(file.fileId) }}
+                    </span>
+                    <span class="attachment-confidence">{{ confidenceText(file.fileId) }}</span>
+                    <span class="confidence-bar" aria-hidden="true">
+                      <span :style="{ width: confidenceWidth(file.fileId) }" />
+                    </span>
+                  </div>
+                </div>
+
+                <div class="attachment-row-actions">
+                  <button
+                    type="button"
+                    class="icon-link"
+                    title="Preview"
+                    @click="openPreview(file)"
+                  >
+                    <i class="pi pi-eye" />
+                  </button>
+                  <button
+                    type="button"
+                    class="icon-link"
+                    title="Download"
+                    @click="downloadAttachment(file.fileId)"
+                  >
+                    <i class="pi pi-download" />
+                  </button>
+                </div>
+              </article>
+            </div>
+            <div v-else class="attachment-empty">No attachments uploaded.</div>
+          </section>
+        </div>
+
+        <aside class="detail-side flex min-w-0 flex-col gap-4">
+          <section class="panel">
+            <div class="panel-head">
+              <h2 class="panel-title"><i class="pi pi-chart-bar" />Status timeline</h2>
             </div>
             <div v-if="emergency.status === 'REJECTED'" class="attachment-empty">
               This report was rejected by the rescue service.
@@ -281,69 +420,38 @@ onUnmounted(() => {
               >
                 <span class="timeline-dot" />
                 <span class="timeline-label">{{ statusLabel(status) }}</span>
+                <span class="timeline-state">{{ timelineState(index) }}</span>
               </div>
             </div>
           </section>
 
           <section class="panel">
             <div class="panel-head">
-              <h2 class="panel-title">Location map</h2>
+              <h2 class="panel-title"><i class="pi pi-info-circle" />Report details</h2>
             </div>
-            <LocationMap
-              :city="emergency.city"
-              :street="emergency.street"
-              :country="emergency.country"
-              :title="emergency.title"
-            />
-          </section>
-        </div>
-
-        <aside class="detail-side">
-          <section class="panel">
-            <div class="panel-head">
-              <h2 class="panel-title">Attachments</h2>
-              <span class="muted-sm">{{ emergency.files?.length ?? 0 }}</span>
-            </div>
-            <div v-if="emergency.files?.length" class="attachment-grid">
-              <article
-                v-for="file in emergency.files"
-                :key="file.fileId"
-                class="attachment-card"
-              >
-                <button type="button" class="attachment-media" @click="openPreview(file)">
-                  <img
-                    v-if="isImage(file.url) && attachmentUrls[file.fileId]"
-                    :src="attachmentUrls[file.fileId]"
-                    alt=""
-                  />
-                  <div v-else class="attachment-fallback">
-                    <i
-                      :class="attachmentUrls[file.fileId] ? 'pi pi-play-circle' : 'pi pi-spin pi-spinner'"
-                    />
-                  </div>
+            <dl class="kv">
+              <dt>Report ID</dt>
+              <dd>
+                #{{ emergency.id }}
+                <button type="button" class="copy-btn" title="Copy report ID" @click="copyText(String(emergency.id), 'Report ID')">
+                  <i class="pi pi-copy" />
                 </button>
-                <div class="attachment-info">
-                  <div class="attachment-name" :title="attachmentName(file.fileId)">
-                    {{ attachmentName(file.fileId) }}
-                  </div>
-                  <div class="attachment-ai-row">
-                    <span class="ai-pill" :class="moderationClass(file.fileId)">
-                      {{ moderationLabel(file.fileId) }}
-                    </span>
-                    <span class="attachment-confidence">{{ confidenceText(file.fileId) }}</span>
-                  </div>
-                  <div class="confidence-bar" aria-hidden="true">
-                    <span :style="{ width: confidenceWidth(file.fileId) }" />
-                  </div>
-                </div>
-              </article>
-            </div>
-            <div v-else class="attachment-empty">No attachments uploaded.</div>
+              </dd>
+              <dt>Reporter</dt>
+              <dd class="mono">
+                {{ emergency.userId }}
+                <button type="button" class="copy-btn" title="Copy reporter ID" @click="copyText(emergency.userId, 'Reporter ID')">
+                  <i class="pi pi-copy" />
+                </button>
+              </dd>
+              <dt>Created</dt>
+              <dd>{{ formatDateTime(emergency.createdAt) }}</dd>
+            </dl>
           </section>
 
           <section class="panel">
             <div class="panel-head">
-              <h2 class="panel-title">Location</h2>
+              <h2 class="panel-title"><i class="pi pi-map-marker" />Address details</h2>
             </div>
             <dl class="kv">
               <dt>Address</dt>
@@ -354,20 +462,6 @@ onUnmounted(() => {
               <dd>{{ emergency.street || '—' }}</dd>
               <dt>Country</dt>
               <dd>{{ emergency.country || '—' }}</dd>
-            </dl>
-          </section>
-
-          <section class="panel">
-            <div class="panel-head">
-              <h2 class="panel-title">Report</h2>
-            </div>
-            <dl class="kv">
-              <dt>Report ID</dt>
-              <dd>#{{ emergency.id }}</dd>
-              <dt>Reporter</dt>
-              <dd class="mono">{{ emergency.userId }}</dd>
-              <dt>Created</dt>
-              <dd>{{ formatDateTime(emergency.createdAt) }}</dd>
             </dl>
           </section>
         </aside>
