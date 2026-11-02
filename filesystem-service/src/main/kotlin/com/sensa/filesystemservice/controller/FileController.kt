@@ -1,6 +1,7 @@
 package com.sensa.filesystemservice.controller
 
 import com.sensa.filesystemservice.dto.FileLinkRequest
+import com.sensa.filesystemservice.dto.FileDownloadUrlResponse
 import com.sensa.filesystemservice.dto.FileResponse
 import com.sensa.filesystemservice.dto.FileUploadResult
 import com.sensa.filesystemservice.service.FileService
@@ -55,6 +56,19 @@ class FileController(
         @RequestBody request: FileLinkRequest
     ): ResponseEntity<List<FileResponse>> {
         return ResponseEntity.ok(fileService.linkFiles(request, userId))
+    }
+
+    @Operation(summary = "Get temporary download URL", description = "Returns a short-lived presigned S3 URL for a file")
+    @ApiResponses(
+        ApiResponse(responseCode = "200", description = "Download URL generated"),
+        ApiResponse(responseCode = "404", description = "File not found")
+    )
+    @GetMapping("/{id}/url")
+    fun getDownloadUrl(
+        @AuthenticationPrincipal userId: UUID,
+        @PathVariable id: Long
+    ): ResponseEntity<FileDownloadUrlResponse> {
+        return ResponseEntity.ok(fileService.createDownloadUrl(id))
     }
 
     @Operation(summary = "Get file metadata", description = "Returns file metadata by id")
