@@ -1,3 +1,9 @@
+<script setup lang="ts">
+useHead({
+  htmlAttrs: { class: 'app-dark' },
+})
+</script>
+
 <template>
   <div>
     <NuxtRouteAnnouncer />
