@@ -53,10 +53,20 @@ async fn main() {
     let app = Router::new()
         .route("/api/v1/emergencies", post(handlers::create_emergency))
         .route("/api/v1/emergencies", get(handlers::list_emergencies))
+        .route("/api/v1/emergencies/my", get(handlers::get_my_emergencies))
         .route("/api/v1/emergencies/{id}", get(handlers::get_emergency))
-        .route("/api/v1/emergencies/{id}/status", patch(handlers::update_status))
+        .route(
+            "/api/v1/emergencies/{id}/status",
+            patch(handlers::update_status),
+        )
         .route("/actuator/health", get(|| async { "OK" }))
-        .route("/metrics", get(move || { let m = metrics.clone(); async move { m.render() } }))
+        .route(
+            "/metrics",
+            get(move || {
+                let m = metrics.clone();
+                async move { m.render() }
+            }),
+        )
         .with_state(state)
         .layer(prometheus_layer);
 

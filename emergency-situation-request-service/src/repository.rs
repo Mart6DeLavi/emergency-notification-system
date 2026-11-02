@@ -62,6 +62,23 @@ impl EmergencyRepository {
         Ok(rows)
     }
 
+    pub async fn find_by_user_id(&self, user_id: Uuid) -> Result<Vec<Emergency>, AppError> {
+        let rows = sqlx::query_as::<_, Emergency>(
+            r#"
+            SELECT id, user_id, title, description, files, country, city, street,
+                   alarm_timestamp, status, created_at
+            FROM emergencies
+            WHERE user_id = $1
+            ORDER BY created_at DESC
+            "#,
+        )
+        .bind(user_id)
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(rows)
+    }
+
     pub async fn find_by_id(&self, id: i64) -> Result<Option<Emergency>, AppError> {
         let row = sqlx::query_as::<_, Emergency>(
             r#"
@@ -78,7 +95,11 @@ impl EmergencyRepository {
         Ok(row)
     }
 
-    pub async fn update_status(&self, id: i64, status: &str) -> Result<Option<Emergency>, AppError> {
+    pub async fn update_status(
+        &self,
+        id: i64,
+        status: &str,
+    ) -> Result<Option<Emergency>, AppError> {
         let row = sqlx::query_as::<_, Emergency>(
             r#"
             UPDATE emergencies
