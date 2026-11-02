@@ -35,3 +35,6 @@ mobile/ios/*.xcuserstate
 mobile/ios/**/*.xcuserdata/
 mobile/ios/.build/
 mobile/ios/.swiftpm/
+
+# local screenshots
+/2026-*.png
