@@ -26,6 +26,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -159,10 +160,10 @@ public class NotificationService {
 
     @Cacheable(cacheNames = "notifications", key = "#userId")
     public List<NotificationResponse> getMyNotifications(UUID userId) {
-        return notificationRepository.findByUserIdOrderByCreatedAtDesc(userId)
+        return new ArrayList<>(notificationRepository.findByUserIdOrderByCreatedAtDesc(userId)
                 .stream()
                 .map(notificationMapper::toResponse)
-                .toList();
+                .toList());
     }
 
     public NotificationResponse getNotification(String id, UUID userId) {
