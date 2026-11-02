@@ -1,0 +1,58 @@
+# SENSA iOS CI.
+#
+# Builds the SwiftUI app for the iOS Simulator on Codemagic (macOS + Xcode).
+# No Apple Developer account or code signing is required: the result is a
+# simulator *.app packaged as a ZIP for Appetize.io.
+#
+# Triggering is limited to the ios-app branch for now so backend pushes to
+# master do not start iOS builds. After the scaffold is merged, add the master
+# pattern (Codemagic has no native path filter).
+workflows:
+  sensa-ios-simulator:
+    name: SENSA iOS Simulator
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      xcode: 16.4
+      vars:
+        XCODE_PROJECT: SENSA.xcodeproj
+        XCODE_SCHEME: SENSA
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: ios-app
+          include: true
+    scripts:
+      - name: Install XcodeGen
+        script: |
+          brew install xcodegen
+      - name: Generate Xcode project
+        script: |
+          cd mobile/ios
+          xcodegen generate
+      - name: Build for iOS Simulator
+        script: |
+          cd mobile/ios
+          xcodebuild \
+            -project "$XCODE_PROJECT" \
+            -scheme "$XCODE_SCHEME" \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+      - name: Package simulator app
+        script: |
+          cd mobile/ios
+          APP_PATH=$(find build/Build/Products/Debug-iphonesimulator -maxdepth 1 -name "*.app" | head -n 1)
+          if [ -z "$APP_PATH" ]; then
+            echo "ERROR: simulator .app was not produced"
+            exit 1
+          fi
+          echo "APP_PATH=$APP_PATH"
+          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" SENSA-simulator.zip
+          ls -lh SENSA-simulator.zip
+    artifacts:
+      - mobile/ios/SENSA-simulator.zip

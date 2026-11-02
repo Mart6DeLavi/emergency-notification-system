@@ -26,3 +26,12 @@ notification-service2/
 
 # Local screenshots (not part of the repo)
 /img*.png
+
+# iOS / Xcode (mobile/ios)
+mobile/ios/DerivedData/
+mobile/ios/build/
+mobile/ios/SENSA.xcodeproj/
+mobile/ios/*.xcuserstate
+mobile/ios/**/*.xcuserdata/
+mobile/ios/.build/
+mobile/ios/.swiftpm/

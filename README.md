@@ -10,6 +10,12 @@ It features an admin-friendly interface for managing recipients, importing large
 
 ---
 
+## 📱 Mobile (iOS)
+
+Native SwiftUI client scaffold (smoke-test stage) lives in [`mobile/ios`](mobile/ios). It targets iOS 17 and is built in the cloud with Codemagic using [`codemagic.yaml`](codemagic.yaml) — no local Xcode installation is required. Build and Appetize instructions: [`mobile/ios/README.md`](mobile/ios/README.md).
+
+---
+
 ## ✅ Functional Requirements
 
 ### 🔔 Notification Sending
