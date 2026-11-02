@@ -5,7 +5,7 @@ enum APIError: LocalizedError {
     case unauthorized
     case http(status: Int, message: String)
     case decoding(Error)
-    case transport(Error)
+    case transport(Error, url: String)
 
     var errorDescription: String? {
         switch self {
@@ -17,8 +17,8 @@ enum APIError: LocalizedError {
             return message
         case .decoding:
             return "The server returned data in an unexpected format."
-        case .transport(let error):
-            return "Network error: \(error.localizedDescription)"
+        case .transport(let error, let url):
+            return "Network error (\(url)): \(error.localizedDescription)"
         }
     }
 }

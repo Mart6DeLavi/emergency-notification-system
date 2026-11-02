@@ -145,7 +145,7 @@ final class APIClient {
         } catch let error as APIError {
             throw error
         } catch {
-            throw APIError.transport(error)
+            throw APIError.transport(error, url: request.url?.absoluteString ?? "unknown")
         }
     }
 

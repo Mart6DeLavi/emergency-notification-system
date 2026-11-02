@@ -4,15 +4,10 @@ enum AppConfig {
     /// Production API gateway. The gateway exposes `/api/v1/...`; Caddy maps
     /// `https://panel.sensanotify.com/api/*` to the gateway.
     ///
-    /// For local development set the `API_BASE_URL` environment variable in the
-    /// Xcode scheme (for example `http://localhost:8080`).
-    static var apiBaseURL: URL {
-        if let raw = ProcessInfo.processInfo.environment["API_BASE_URL"], !raw.isEmpty {
-            let trimmed = raw.hasSuffix("/") ? String(raw.dropLast()) : raw
-            if let url = URL(string: trimmed) {
-                return url
-            }
-        }
-        return URL(string: "https://panel.sensanotify.com/api")!
-    }
+    /// For local development change this constant (or add a dedicated
+    /// non-production override). Do not read `API_BASE_URL` from the process
+    /// environment: launch environments (including Appetize) can inject a
+    /// relative or malformed value, which makes URLSession fail with
+    /// `NSURLErrorBadURL`.
+    static let apiBaseURL = URL(string: "https://panel.sensanotify.com/api")!
 }
