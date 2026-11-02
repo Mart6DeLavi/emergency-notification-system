@@ -93,6 +93,10 @@ final class APIClient {
         try await send(makeRequest("/v1/emergencies/\(id)"))
     }
 
+    func getFileURL(fileId: Int64) async throws -> FileDownloadUrlResponse {
+        try await send(makeRequest("/v1/files/\(fileId)/url"))
+    }
+
     // MARK: - Internals
 
     private func url(_ path: String) -> URL {

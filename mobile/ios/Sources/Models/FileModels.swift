@@ -27,3 +27,8 @@ struct FileResponse: Decodable, Identifiable {
     let moderationStatus: String?
     let createdAt: String?
 }
+
+struct FileDownloadUrlResponse: Decodable {
+    let url: String
+    let expiresInSeconds: Int64
+}
