@@ -3,33 +3,48 @@ import { useAuthStore } from '~/stores/auth'
 
 const auth = useAuthStore()
 const route = useRoute()
-const search = useState('global-search', () => '')
+const router = useRouter()
+const { t, language, setLanguage, restore } = usePanelLocale()
+
+const accountOpen = ref(false)
 
 const email = computed(() => auth.email || '—')
-const initials = computed(() => (auth.email || 'S').charAt(0).toUpperCase())
+const initials = computed(() => email.value.slice(0, 1).toUpperCase())
+const shortUserId = computed(() => {
+  const id = auth.userId || ''
+  return id.length > 14 ? `${id.slice(0, 8)}…${id.slice(-4)}` : id
+})
+
+onMounted(restore)
 
 function logout() {
   auth.clear()
-  navigateTo('/login')
+  router.push('/login')
 }
 </script>
 
 <template>
   <div class="app-shell">
     <aside class="app-sidebar">
-      <NuxtLink to="/" class="app-brand">
-        <span class="brand-mark"><i class="pi pi-shield" /></span>
-        <span>
-          <span class="brand-name">SENSA</span>
-          <span class="brand-sub">Rescue console</span>
-        </span>
-      </NuxtLink>
+      <div class="app-brand">
+        <div class="brand-mark">
+          <i class="pi pi-shield" />
+        </div>
+        <div>
+          <div class="brand-name">SENSA</div>
+          <div class="brand-sub">Rescue</div>
+        </div>
+      </div>
 
-      <div class="nav-label">Operations</div>
+      <div class="nav-label">{{ t('operations') }}</div>
 
-      <NuxtLink to="/" class="app-nav-item" :class="{ active: route.path === '/' }">
+      <NuxtLink
+        to="/"
+        class="app-nav-item"
+        :class="{ active: route.path === '/' }"
+      >
         <i class="pi pi-inbox" />
-        <span>Emergencies</span>
+        <span>{{ t('emergencies') }}</span>
       </NuxtLink>
 
       <NuxtLink
@@ -38,45 +53,87 @@ function logout() {
         :class="{ active: route.path.startsWith('/templates') }"
       >
         <i class="pi pi-file-edit" />
-        <span>Templates</span>
+        <span>{{ t('templates') }}</span>
       </NuxtLink>
 
-      <div class="app-sidebar-footer">
-        <div class="app-user">
-          <span class="avatar avatar-sm">{{ initials }}</span>
-          <span class="app-user-email">{{ email }}</span>
-        </div>
-        <button type="button" class="app-nav-item" style="width: 100%; border: 0; background: none; cursor: pointer" @click="logout">
-          <i class="pi pi-sign-out" />
-          <span>Sign out</span>
-        </button>
-      </div>
+      <div class="sidebar-spacer" />
+
+      <button type="button" class="account-button" @click="accountOpen = true">
+        <span class="avatar">{{ initials }}</span>
+        <span class="account-text">
+          <strong>{{ t('account') }}</strong>
+          <small>{{ email }}</small>
+        </span>
+        <i class="pi pi-cog" />
+      </button>
     </aside>
 
-    <div class="app-main-wrap">
-      <header class="app-topbar">
-        <div class="topbar-search">
-          <i class="pi pi-search" />
-          <InputText v-model="search" placeholder="Search reports, locations…" />
-        </div>
+    <main class="app-main">
+      <slot />
+    </main>
 
-        <div class="topbar-right">
-          <span class="live-pill">Live</span>
-          <button class="icon-btn" type="button" aria-label="Notifications">
-            <i class="pi pi-bell" />
-            <span class="notif-dot" />
-          </button>
-          <div class="topbar-user">
-            <span class="avatar">{{ initials }}</span>
-            <span class="topbar-user-email">{{ email }}</span>
-            <i class="pi pi-chevron-down topbar-chevron" />
+    <Dialog
+      v-model:visible="accountOpen"
+      modal
+      :header="t('account')"
+      :style="{ width: '430px' }"
+      :draggable="false"
+    >
+      <div class="account-profile">
+        <span class="avatar avatar-lg">{{ initials }}</span>
+        <div class="account-identity">
+          <strong>{{ email }}</strong>
+          <small>{{ shortUserId }}</small>
+        </div>
+      </div>
+
+      <div class="account-list">
+        <div class="account-row">
+          <span>{{ t('theme') }}</span>
+          <span class="account-value">
+            <i class="pi pi-moon" />
+            {{ t('themeDark') }}
+          </span>
+        </div>
+        <div class="account-row">
+          <span>{{ t('language') }}</span>
+          <div class="segmented">
+            <button
+              type="button"
+              :class="{ active: language === 'en' }"
+              @click="setLanguage('en')"
+            >
+              EN
+            </button>
+            <button
+              type="button"
+              :class="{ active: language === 'pl' }"
+              @click="setLanguage('pl')"
+            >
+              PL
+            </button>
           </div>
         </div>
-      </header>
+        <div class="account-row">
+          <span>{{ t('session') }}</span>
+          <span class="live-pill">{{ t('live') }}</span>
+        </div>
+      </div>
 
-      <main class="app-content">
-        <slot />
-      </main>
-    </div>
+      <template #footer>
+        <Button
+          :label="t('signOut')"
+          icon="pi pi-sign-out"
+          severity="danger"
+          text
+          @click="logout"
+        />
+        <Button
+          :label="t('close')"
+          severity="secondary"
+          @click="accountOpen = false"
+        />
+      </template>
+    </Dialog>
   </div>
 </template>

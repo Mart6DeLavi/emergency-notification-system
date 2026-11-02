@@ -1,19 +1,23 @@
 <script setup lang="ts">
 import type { Emergency, EmergencyStatus } from '~/types'
 
+const { t } = usePanelLocale()
 const api = useApi()
 const toast = useToast()
-const search = useState('global-search', () => '')
+const route = useRoute()
+const router = useRouter()
 
 const emergencies = ref<Emergency[]>([])
 const loading = ref(false)
+const search = ref('')
 const activeTab = ref<'ALL' | 'OPEN' | 'CONFIRMED' | 'REJECTED'>('ALL')
+const selectedId = ref<number | null>(null)
 
 const tabs = computed(() => [
-  { key: 'ALL' as const, label: 'All reports', count: emergencies.value.length },
-  { key: 'OPEN' as const, label: 'Open', count: emergencies.value.filter(isOpen).length },
-  { key: 'CONFIRMED' as const, label: 'Confirmed', count: emergencies.value.filter(isConfirmed).length },
-  { key: 'REJECTED' as const, label: 'Rejected', count: emergencies.value.filter((item) => item.status === 'REJECTED').length },
+  { key: 'ALL' as const, label: t('all'), count: emergencies.value.length },
+  { key: 'OPEN' as const, label: t('open'), count: emergencies.value.filter(isOpen).length },
+  { key: 'CONFIRMED' as const, label: t('confirmed'), count: emergencies.value.filter(isConfirmed).length },
+  { key: 'REJECTED' as const, label: t('rejected'), count: emergencies.value.filter((item) => item.status === 'REJECTED').length },
 ])
 
 const filtered = computed(() => {
@@ -33,6 +37,10 @@ const filtered = computed(() => {
       .some((value) => String(value).toLowerCase().includes(term))
   })
 })
+
+const selected = computed(() =>
+  emergencies.value.find((item) => item.id === selectedId.value) ?? null,
+)
 
 function isOpen(item: Emergency) {
   return item.status === 'REPORTED' || item.status === 'UNDER_REVIEW'
@@ -56,17 +64,9 @@ function location(item: Emergency) {
   return [item.street, item.city, item.country].filter(Boolean).join(', ') || 'No location'
 }
 
-function openEmergency(item: Emergency) {
-  navigateTo(`/emergencies/${item.id}`)
-}
-
-async function copyId(item: Emergency) {
-  try {
-    await navigator.clipboard.writeText(String(item.id))
-    toast.add({ severity: 'success', summary: 'Copied', detail: `Report #${item.id}`, life: 1800 })
-  } catch {
-    toast.add({ severity: 'error', summary: 'Could not copy', detail: 'Clipboard is unavailable.', life: 2200 })
-  }
+function select(item: Emergency) {
+  selectedId.value = item.id
+  router.replace({ query: { id: String(item.id) } })
 }
 
 async function load() {
@@ -83,8 +83,16 @@ async function load() {
 
 let timer: ReturnType<typeof setInterval> | undefined
 
-onMounted(() => {
-  load()
+onMounted(async () => {
+  await load()
+
+  const queryId = Number(route.query.id)
+  if (Number.isFinite(queryId) && queryId > 0) {
+    selectedId.value = queryId
+  } else if (filtered.value.length) {
+    selectedId.value = filtered.value[0]!.id
+  }
+
   timer = setInterval(load, 20000)
 })
 
@@ -94,91 +102,98 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <section>
-    <div class="page-head">
-      <div>
-        <p class="eyebrow">Operations</p>
-        <h1 class="page-title">Emergencies</h1>
-        <p class="page-subtitle">Incoming reports from the field, newest first.</p>
+  <div class="events-layout">
+    <section class="island events-list">
+      <header class="list-head">
+        <div class="list-title-row">
+          <div>
+            <p class="eyebrow">{{ t('operations') }}</p>
+            <h1 class="list-title">{{ t('events') }}</h1>
+          </div>
+          <span class="live-pill">{{ t('live') }}</span>
+          <Button
+            icon="pi pi-refresh"
+            text
+            severity="secondary"
+            :loading="loading"
+            aria-label="Refresh"
+            @click="load"
+          />
+        </div>
+
+        <InputText
+          v-model="search"
+          :placeholder="t('search')"
+          class="list-search"
+        />
+
+        <div class="tabs">
+          <button
+            v-for="tab in tabs"
+            :key="tab.key"
+            type="button"
+            class="tab"
+            :class="{ active: activeTab === tab.key }"
+            @click="activeTab = tab.key"
+          >
+            {{ tab.label }}
+            <span class="tab-count">{{ tab.count }}</span>
+          </button>
+        </div>
+      </header>
+
+      <div class="events-scroll">
+        <div v-if="loading && !emergencies.length" class="state">
+          <i class="pi pi-spin pi-spinner" />
+          <span>Loading reports…</span>
+        </div>
+
+        <div v-else-if="!filtered.length" class="state">
+          <i class="pi pi-inbox" />
+          <strong>{{ t('noReports') }}</strong>
+        </div>
+
+        <button
+          v-for="item in filtered"
+          :key="item.id"
+          type="button"
+          class="event-card"
+          :class="{ selected: selectedId === item.id }"
+          @click="select(item)"
+        >
+          <div class="event-card-top">
+            <span class="row-avatar" :style="{ background: avatarColor(item.id) }">
+              {{ initials(item) }}
+            </span>
+            <span class="event-card-title">{{ item.title }}</span>
+            <span class="status" :class="`status--${item.status.toLowerCase()}`">
+              {{ statusLabel(item.status as EmergencyStatus) }}
+            </span>
+          </div>
+          <div class="event-card-meta">
+            <i class="pi pi-map-marker" />
+            {{ location(item) }}
+          </div>
+          <div class="event-card-foot">
+            <span>#{{ item.id }}</span>
+            <span>{{ formatDateTime(item.createdAt) }}</span>
+            <span>{{ item.files?.length || 0 }} files</span>
+          </div>
+        </button>
       </div>
-      <Button label="Refresh" icon="pi pi-refresh" severity="secondary" outlined :loading="loading" @click="load" />
-    </div>
+    </section>
 
-    <div class="tabs">
-      <button
-        v-for="tab in tabs"
-        :key="tab.key"
-        type="button"
-        class="tab"
-        :class="{ active: activeTab === tab.key }"
-        @click="activeTab = tab.key"
-      >
-        {{ tab.label }}
-        <span class="tab-count">{{ tab.count }}</span>
-      </button>
-    </div>
-
-    <div class="table-card">
-      <div v-if="loading && !emergencies.length" class="state">
-        <i class="pi pi-spin pi-spinner" />
-        <span>Loading reports…</span>
-      </div>
-
-      <div v-else-if="!filtered.length" class="state">
+    <section class="island event-detail">
+      <EmergencyDetailPane
+        v-if="selectedId"
+        :key="selectedId"
+        :emergency-id="selectedId"
+        @updated="load"
+      />
+      <div v-else class="state state-fill">
         <i class="pi pi-inbox" />
-        <strong>No reports found</strong>
-        <span>Try a different tab or clear the search.</span>
+        <strong>{{ t('selectReport') }}</strong>
       </div>
-
-      <table v-else class="data-table">
-        <thead>
-          <tr>
-            <th>Emergency</th>
-            <th>Location</th>
-            <th>Status</th>
-            <th>Reported</th>
-            <th />
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in filtered" :key="item.id" @click="openEmergency(item)">
-            <td>
-              <div class="row-main">
-                <span class="row-avatar" :style="{ background: avatarColor(item.id) }">{{ initials(item) }}</span>
-                <span class="row-title-wrap">
-                  <span class="row-title">{{ item.title }}</span>
-                  <span class="row-sub">#{{ item.id }} · {{ item.files?.length || 0 }} attachments</span>
-                </span>
-              </div>
-            </td>
-            <td>
-              <span class="row-location">
-                <i class="pi pi-map-marker" />
-                {{ location(item) }}
-              </span>
-            </td>
-            <td>
-              <span class="status" :class="`status--${item.status.toLowerCase()}`">
-                {{ statusLabel(item.status as EmergencyStatus) }}
-              </span>
-            </td>
-            <td><span class="row-time">{{ formatDateTime(item.createdAt) }}</span></td>
-            <td class="cell-actions" @click.stop>
-              <details class="row-menu">
-                <summary><i class="pi pi-ellipsis-v" /></summary>
-                <div class="row-menu-pop">
-                  <button type="button" @click="openEmergency(item)">
-                    <i class="pi pi-arrow-right" /> Open report
-                  </button>
-                  <button type="button" @click="copyId(item)">
-                    <i class="pi pi-copy" /> Copy ID
-                  </button>
-                </div>
-              </details>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
+    </section>
+  </div>
 </template>
