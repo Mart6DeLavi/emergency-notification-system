@@ -10,4 +10,6 @@ import java.util.List;
 public interface OperatorBroadcastRepository extends MongoRepository<OperatorBroadcast, String> {
 
     List<OperatorBroadcast> findTop20ByOrderByCreatedAtDesc();
+
+    List<OperatorBroadcast> findTop20ByOperatorIdOrderByCreatedAtDesc(String operatorId);
 }

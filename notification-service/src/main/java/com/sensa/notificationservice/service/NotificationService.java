@@ -54,9 +54,9 @@ public class NotificationService {
     }
 
     @CacheEvict(cacheNames = "notifications", allEntries = true)
-    public BroadcastResponse broadcast(BroadcastRequest request) {
-        log.info("Operator broadcast: title={}, city={}, street={}",
-                request.title(), request.city(), request.street());
+    public BroadcastResponse broadcast(BroadcastRequest request, UUID operatorId) {
+        log.info("Operator broadcast: operatorId={}, title={}, city={}, street={}",
+                operatorId, request.title(), request.city(), request.street());
 
         boolean areaTargeted = request.city() != null && !request.city().isBlank();
         List<UserLocationResponse> recipients = areaTargeted
@@ -108,6 +108,7 @@ public class NotificationService {
         }
 
         OperatorBroadcast record = OperatorBroadcast.builder()
+                .operatorId(operatorId != null ? operatorId.toString() : null)
                 .alertType(normalize(request.alertType(), "OTHER"))
                 .title(request.title())
                 .message(request.message())
@@ -128,9 +129,12 @@ public class NotificationService {
         return new BroadcastResponse(record.getId(), alerted, deliveries, filtered, 0);
     }
 
-    public List<BroadcastHistoryResponse> getBroadcastHistory() {
-        return operatorBroadcastRepository.findTop20ByOrderByCreatedAtDesc()
-                .stream()
+    public List<BroadcastHistoryResponse> getBroadcastHistory(UUID operatorId) {
+        List<OperatorBroadcast> broadcasts = operatorId == null
+                ? operatorBroadcastRepository.findTop20ByOrderByCreatedAtDesc()
+                : operatorBroadcastRepository.findTop20ByOperatorIdOrderByCreatedAtDesc(operatorId.toString());
+
+        return broadcasts.stream()
                 .map(this::toHistoryResponse)
                 .toList();
     }

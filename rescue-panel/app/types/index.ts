@@ -73,6 +73,26 @@ export interface TokenValidationResponse {
   email: string | null
 }
 
+export type AlertType = 'FIRE' | 'ACCIDENT' | 'WEATHER' | 'EVACUATION' | 'OTHER'
+
+/** Operator broadcast stored by notification-service. */
+export interface BroadcastHistory {
+  id: string
+  alertType: AlertType
+  title: string
+  message: string
+  audience: string
+  city?: string | null
+  street?: string | null
+  radiusKm?: number | null
+  recipients: number
+  deliveries: number
+  filtered: number
+  errors: number
+  status: string
+  createdAt: string
+}
+
 export type ModerationStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
 
 /** File metadata returned by filesystem-service (camelCase JSON). */
