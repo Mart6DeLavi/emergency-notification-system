@@ -11,5 +11,6 @@ data class FileResponse(
     val filename: String,
     val emergencySituationId: Long?,
     val moderationStatus: ModerationStatus,
+    val moderationConfidence: Double? = null,
     val createdAt: LocalDateTime
 )

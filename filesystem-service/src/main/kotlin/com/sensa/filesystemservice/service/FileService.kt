@@ -92,7 +92,8 @@ class FileService(
             url = null,
             filename = file.originalFilename ?: "$userId/file.${extension}",
             emergencySituationId = null,
-            moderationStatus = ModerationStatus.REJECTED
+            moderationStatus = ModerationStatus.REJECTED,
+            moderationConfidence = result.confidencePercentage
         )
         val saved = fileRepository.save(entity)
         emitModeratedEvent(saved, ModerationStatus.REJECTED)
@@ -120,7 +121,8 @@ class FileService(
             url = url,
             filename = file.originalFilename ?: key,
             emergencySituationId = null,
-            moderationStatus = ModerationStatus.APPROVED
+            moderationStatus = ModerationStatus.APPROVED,
+            moderationConfidence = result.confidencePercentage
         )
         val saved = fileRepository.save(entity)
         emitModeratedEvent(saved, ModerationStatus.APPROVED)

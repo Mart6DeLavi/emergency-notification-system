@@ -1,3 +1,5 @@
 databaseChangeLog:
   - include:
       file: db/changelog/changeset/filesystem_V001_initial.sql
+  - include:
+      file: db/changelog/changeset/filesystem_V002_moderation_confidence.sql
