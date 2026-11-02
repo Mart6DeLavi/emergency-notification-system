@@ -51,9 +51,10 @@ public class NotificationController {
     })
     @PostMapping("/broadcast")
     public ResponseEntity<BroadcastResponse> broadcast(
+            @AuthenticationPrincipal UUID operatorId,
             @RequestBody @Valid BroadcastRequest request
     ) {
-        return ResponseEntity.ok(notificationService.broadcast(request));
+        return ResponseEntity.ok(notificationService.broadcast(request, operatorId));
     }
 
     @Operation(summary = "Broadcast history", description = "Returns recent operator broadcasts")
@@ -61,8 +62,10 @@ public class NotificationController {
             @ApiResponse(responseCode = "200", description = "Broadcast history")
     })
     @GetMapping("/broadcasts")
-    public ResponseEntity<List<BroadcastHistoryResponse>> getBroadcastHistory() {
-        return ResponseEntity.ok(notificationService.getBroadcastHistory());
+    public ResponseEntity<List<BroadcastHistoryResponse>> getBroadcastHistory(
+            @AuthenticationPrincipal UUID operatorId
+    ) {
+        return ResponseEntity.ok(notificationService.getBroadcastHistory(operatorId));
     }
 
     @Operation(summary = "Get my notifications", description = "Returns all notifications for current user")

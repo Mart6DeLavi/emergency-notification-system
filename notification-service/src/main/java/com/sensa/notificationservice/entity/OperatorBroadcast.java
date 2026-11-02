@@ -22,6 +22,9 @@ public class OperatorBroadcast {
     private String id;
 
     @Indexed
+    private String operatorId;
+
+    @Indexed
     private String alertType;
 
     private String title;
