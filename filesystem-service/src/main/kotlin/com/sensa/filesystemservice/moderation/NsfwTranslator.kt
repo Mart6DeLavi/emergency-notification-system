@@ -23,7 +23,16 @@ class NsfwTranslator(
 
     override fun processOutput(ctx: TranslatorContext, list: NDList): FloatArray {
         val array = list.singletonOrThrow()
-        val logits = array.toFloatArray()
+        val logits = try {
+            array.toFloatArray()
+        } catch (e: Exception) {
+            // The OnnxRuntime NDArray implementation does not implement
+            // toFloatArray(); fall back to the raw byte buffer.
+            val buffer = array.toByteBuffer()
+            val floats = FloatArray(buffer.remaining() / 4)
+            buffer.asFloatBuffer().get(floats)
+            floats
+        }
         return NsfwUtils.softmax(logits)
     }
 }

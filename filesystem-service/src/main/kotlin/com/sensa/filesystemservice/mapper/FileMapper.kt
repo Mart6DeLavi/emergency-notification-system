@@ -15,6 +15,7 @@ class FileMapper {
             filename = entity.filename,
             emergencySituationId = entity.emergencySituationId,
             moderationStatus = entity.moderationStatus,
+            moderationConfidence = entity.moderationConfidence,
             createdAt = entity.createdAt
         )
     }

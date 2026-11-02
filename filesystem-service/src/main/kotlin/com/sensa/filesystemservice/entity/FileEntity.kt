@@ -34,6 +34,9 @@ class FileEntity(
     @Column(name = "moderation_status", nullable = false, length = 32)
     var moderationStatus: ModerationStatus = ModerationStatus.PENDING,
 
+    @Column(name = "moderation_confidence")
+    var moderationConfidence: Double? = null,
+
     @Column(name = "created_at", nullable = false, updatable = false)
     var createdAt: LocalDateTime = LocalDateTime.now()
 )

@@ -84,7 +84,7 @@ class NsfwModelService {
             val isNsfw = nsfwScore.toDouble() >= threshold
             NsfwDetectionResult(imagePath.toString(), isNsfw, nsfwScore.toDouble() * 100)
         } catch (e: Exception) {
-            log.warn("NSFW detection failed for {}: {}", imagePath, e.message)
+            log.warn("NSFW detection failed for {}", imagePath, e)
             NsfwDetectionResult(imagePath.toString(), false, 0.0)
         }
     }
