@@ -2,6 +2,7 @@ package com.sensa.notificationservice.controller;
 
 import com.sensa.notificationservice.dto.NotificationRequest;
 import com.sensa.notificationservice.dto.NotificationResponse;
+import com.sensa.notificationservice.dto.BroadcastHistoryResponse;
 import com.sensa.notificationservice.dto.BroadcastRequest;
 import com.sensa.notificationservice.dto.BroadcastResponse;
 import com.sensa.notificationservice.service.NotificationService;
@@ -53,6 +54,15 @@ public class NotificationController {
             @RequestBody @Valid BroadcastRequest request
     ) {
         return ResponseEntity.ok(notificationService.broadcast(request));
+    }
+
+    @Operation(summary = "Broadcast history", description = "Returns recent operator broadcasts")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Broadcast history")
+    })
+    @GetMapping("/broadcasts")
+    public ResponseEntity<List<BroadcastHistoryResponse>> getBroadcastHistory() {
+        return ResponseEntity.ok(notificationService.getBroadcastHistory());
     }
 
     @Operation(summary = "Get my notifications", description = "Returns all notifications for current user")

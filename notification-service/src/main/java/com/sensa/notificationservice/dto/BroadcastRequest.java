@@ -11,7 +11,13 @@ public record BroadcastRequest(
         @NotBlank(message = "Message is required")
         String message,
 
+        String alertType,
+
+        String audience,
+
         String city,
 
-        String street
+        String street,
+
+        Double radiusKm
 ) {}
