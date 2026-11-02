@@ -1,5 +1,5 @@
 use crate::error::AppError;
-use jsonwebtoken::{decode, DecodingKey, Validation};
+use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -13,7 +13,11 @@ struct Claims {
 pub fn extract_user_id(token: &str, secret: &str) -> Result<uuid::Uuid, AppError> {
     let token = token.strip_prefix("Bearer ").unwrap_or(token);
 
-    let validation = Validation::default();
+    // Tokens are issued by authentication-service with HS512 (jjwt picks the
+    // strongest HMAC algorithm for the configured secret). jsonwebtoken's
+    // Validation::default() expects HS256, which rejects every real token
+    // with "InvalidAlgorithm".
+    let validation = Validation::new(Algorithm::HS512);
     let decoding_key = DecodingKey::from_secret(secret.as_bytes());
 
     let data = decode::<Claims>(token, &decoding_key, &validation)
