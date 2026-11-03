@@ -180,6 +180,7 @@ async fn deliver_sms(event: &DeliveryEvent, config: &Config) -> Result<(), Strin
     let provider = aws_credential_types::provider::SharedCredentialsProvider::new(credentials);
 
     let sdk_config = aws_config::SdkConfig::builder()
+        .behavior_version(aws_config::BehaviorVersion::latest())
         .region(aws_config::Region::new(region.to_string()))
         .credentials_provider(provider)
         .build();
