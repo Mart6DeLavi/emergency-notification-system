@@ -4147,7 +4147,7 @@ body {
   flex-direction: column;
   gap: 14px;
   max-width: none;
-  padding: 18px 20px 24px;
+  padding: 18px 20px 12px;
 }
 
 .bd-head {
@@ -4278,7 +4278,7 @@ body {
   align-items: center;
   gap: 12px;
   min-width: 0;
-  padding: 13px 14px;
+  padding: 11px 14px;
   border: 1px solid var(--border);
   border-radius: 13px;
   background: var(--surface);
@@ -4376,7 +4376,7 @@ body {
 .bd-message {
   display: flex;
   flex-direction: column;
-  min-height: 154px;
+  min-height: 140px;
 }
 
 .bd-message p {
@@ -4480,12 +4480,12 @@ body {
 
 .bd-map {
   flex: 1;
-  min-height: 258px;
+  min-height: 240px;
 }
 
 .bd-map .area-map {
   height: 100%;
-  min-height: 258px;
+  min-height: 240px;
   border-radius: 11px;
   overflow: hidden;
 }
@@ -4501,7 +4501,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 7px;
-  min-height: 222px;
+  min-height: 210px;
   border: 1px dashed var(--border);
   border-radius: 11px;
   color: var(--muted);
