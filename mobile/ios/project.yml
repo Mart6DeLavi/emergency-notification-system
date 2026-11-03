@@ -12,23 +12,54 @@ targets:
     platform: iOS
     sources:
       - path: Sources
+    info:
+      path: Info.plist
+      properties:
+        CFBundleDisplayName: SENSA
+        CFBundleDevelopmentRegion: en
+        CFBundleLocalizations:
+          - en
+          - pl
+        NSPhotoLibraryUsageDescription: "SENSA needs access to your photos and videos so you can attach evidence to an emergency report."
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.sensa.mobile
         PRODUCT_NAME: SENSA
         SWIFT_VERSION: "5.0"
-        GENERATE_INFOPLIST_FILE: YES
         TARGETED_DEVICE_FAMILY: "1,2"
         CURRENT_PROJECT_VERSION: 1
-        MARKETING_VERSION: 0.1.0
-        INFOPLIST_KEY_CFBundleDisplayName: SENSA
-        INFOPLIST_KEY_UILaunchScreen_Generation: YES
-        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        MARKETING_VERSION: 1.0.0
+
+  SENSATests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: SENSATests
+    dependencies:
+      - target: SENSA
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.sensa.mobile.tests
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: "5.0"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/SENSA.app/SENSA"
+        BUNDLE_LOADER: "$(TEST_HOST)"
 
 schemes:
   SENSA:
     build:
       targets:
         SENSA: all
+        SENSATests: [test]
+    test:
+      targets:
+        - SENSATests
     run:
       config: Debug
