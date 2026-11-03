@@ -10,6 +10,7 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -46,6 +47,12 @@ public class OperatorBroadcast {
     private int filtered;
 
     private int errors;
+
+    /**
+     * Relative millisecond offsets of each queued delivery job.
+     * Used by the operator console to draw the delivery timeline.
+     */
+    private List<Long> deliveryTimeline;
 
     private String status;
 

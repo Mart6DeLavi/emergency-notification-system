@@ -2,15 +2,30 @@
 import { LCircle, LMap, LMarker, LTileLayer } from '@vue-leaflet/vue-leaflet'
 import L from 'leaflet'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   city?: string | null
   street?: string | null
   radiusKm: number
-}>()
+  dark?: boolean
+}>(), {
+  dark: false,
+})
 
 const coords = ref<[number, number] | null>(null)
 const loading = ref(false)
 let timer: ReturnType<typeof setTimeout> | null = null
+
+const tileUrl = computed(() =>
+  props.dark
+    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+    : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+)
+
+const tileAttribution = computed(() =>
+  props.dark
+    ? '&copy; OpenStreetMap contributors &copy; CARTO'
+    : '&copy; OpenStreetMap contributors',
+)
 
 const locationText = computed(() =>
   [props.street, props.city].filter(Boolean).join(', '),
@@ -86,7 +101,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="area-map">
+  <div class="area-map" :class="{ 'area-map--dark': dark }">
     <div v-if="loading" class="area-map-empty">
       <i class="pi pi-spin pi-spinner" /> Locating…
     </div>
@@ -99,8 +114,8 @@ onUnmounted(() => {
       style="height: 100%; width: 100%; border-radius: 12px; z-index: 0"
     >
       <LTileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution="&copy; OpenStreetMap contributors"
+        :url="tileUrl"
+        :attribution="tileAttribution"
       />
       <LCircle
         :lat-lng="coords"

@@ -127,6 +127,11 @@ function selectBroadcast(item: BroadcastHistory) {
   router.replace({ query: { broadcast: item.id } })
 }
 
+function clearBroadcast() {
+  selectedBroadcastId.value = null
+  router.replace({ query: {} })
+}
+
 function switchMode(next: PanelMode) {
   if (mode.value === next) return
   mode.value = next
@@ -371,6 +376,7 @@ onUnmounted(() => {
         v-if="mode === 'BROADCASTS' && selectedBroadcast"
         :key="selectedBroadcast.id"
         :broadcast="selectedBroadcast"
+        @close="clearBroadcast"
       />
       <EmergencyDetailPane
         v-else-if="mode === 'REPORTS' && selectedId"
