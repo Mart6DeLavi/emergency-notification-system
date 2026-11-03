@@ -119,8 +119,15 @@ async fn deliver_email(event: &DeliveryEvent, config: &Config) -> Result<(), Str
         .map_err(|e| e.to_string())?;
 
     let mut builder = if config.smtp_tls {
-        AsyncSmtpTransport::<Tokio1Executor>::relay(host)
-            .map_err(|e| e.to_string())?
+        if config.smtp_port == 465 {
+            // Implicit TLS (SMTPS).
+            AsyncSmtpTransport::<Tokio1Executor>::relay(host)
+                .map_err(|e| e.to_string())?
+        } else {
+            // Submission ports such as 587 use STARTTLS.
+            AsyncSmtpTransport::<Tokio1Executor>::starttls_relay(host)
+                .map_err(|e| e.to_string())?
+        }
     } else {
         AsyncSmtpTransport::<Tokio1Executor>::builder_dangerous(host)
     }
