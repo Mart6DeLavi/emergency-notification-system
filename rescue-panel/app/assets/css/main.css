@@ -4322,6 +4322,18 @@ body {
   line-height: 1.15;
 }
 
+.bd-kpi-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 5px;
+  border-radius: 999px;
+  background: rgba(52, 211, 153, 0.12);
+  color: #34d399;
+  font-size: 8px;
+  font-weight: 700;
+  vertical-align: 2px;
+}
+
 .bd-kpi small {
   overflow: hidden;
   color: var(--muted-2);
@@ -4492,6 +4504,30 @@ body {
 
 .bd-map .area-map--dark {
   background: #0b111b;
+}
+
+.bd-map .leaflet-tile-pane {
+  filter: brightness(0.72) saturate(0.7) contrast(1.08);
+}
+
+.bd-map .leaflet-control-zoom a {
+  border-color: #334155 !important;
+  background: rgba(15, 23, 42, 0.92) !important;
+  color: #cbd5e1 !important;
+}
+
+.bd-map .leaflet-control-zoom a:hover {
+  background: #1e293b !important;
+  color: #fff !important;
+}
+
+.bd-map .leaflet-control-attribution {
+  background: rgba(8, 13, 24, 0.72) !important;
+  color: #94a3b8 !important;
+}
+
+.bd-map .leaflet-control-attribution a {
+  color: #94a3b8 !important;
 }
 
 .bd-all-users {
