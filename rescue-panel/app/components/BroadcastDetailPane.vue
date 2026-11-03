@@ -51,13 +51,15 @@ const totalTime = computed(() => {
   const offsets = props.broadcast.deliveryTimeline ?? []
   if (!offsets.length) return '0.0'
   const last = Math.max(...offsets)
-  return (Math.max(last, 0) / 1000).toFixed(1)
+  if (last < 100) return '<0.1'
+  return (last / 1000).toFixed(1)
 })
 
 const peakRate = computed(() => {
   const offsets = props.broadcast.deliveryTimeline ?? []
   if (!offsets.length || !props.broadcast.deliveries) return '—'
-  const span = Math.max(Math.max(...offsets), 1)
+  const span = Math.max(Math.max(...offsets), 0)
+  if (span < 100) return '—'
   const bucket = Math.max(100, Math.ceil(span / 10))
   const buckets = new Map<number, number>()
   for (const offset of offsets) {
@@ -71,7 +73,9 @@ const peakRate = computed(() => {
 const avgRate = computed(() => {
   const offsets = props.broadcast.deliveryTimeline ?? []
   if (!offsets.length || !props.broadcast.deliveries) return '—'
-  const elapsed = Math.max(Math.max(...offsets), 1) / 1000
+  const span = Math.max(...offsets)
+  if (span < 100) return '—'
+  const elapsed = span / 1000
   return `${Math.round(props.broadcast.deliveries / elapsed)}/s`
 })
 
