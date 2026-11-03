@@ -3,6 +3,7 @@ package com.sensa.notificationservice.dto;
 import lombok.Builder;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Builder
 public record BroadcastHistoryResponse(
@@ -18,6 +19,7 @@ public record BroadcastHistoryResponse(
         int deliveries,
         int filtered,
         int errors,
+        List<Long> deliveryTimeline,
         String status,
         LocalDateTime createdAt
 ) {}

@@ -64,6 +64,8 @@ public class NotificationService {
                 : userDataServiceClient.getAllRecipients();
 
         String deliveryContent = request.message().replace("\n", "<br>");
+        long startedAt = System.nanoTime();
+        List<Long> deliveryTimeline = new ArrayList<>();
         int alerted = 0;
         int deliveries = 0;
         int filtered = 0;
@@ -96,14 +98,17 @@ public class NotificationService {
             if (push) {
                 sendDelivery(recipient, "PUSH", request.title(), deliveryContent);
                 deliveries++;
+                deliveryTimeline.add(offsetMillis(startedAt));
             }
             if (email) {
                 sendDelivery(recipient, "EMAIL", request.title(), deliveryContent);
                 deliveries++;
+                deliveryTimeline.add(offsetMillis(startedAt));
             }
             if (sms) {
                 sendDelivery(recipient, "SMS", request.title(), deliveryContent);
                 deliveries++;
+                deliveryTimeline.add(offsetMillis(startedAt));
             }
         }
 
@@ -120,6 +125,7 @@ public class NotificationService {
                 .deliveries(deliveries)
                 .filtered(filtered)
                 .errors(0)
+                .deliveryTimeline(deliveryTimeline)
                 .status(alerted > 0 ? "DELIVERED" : "FILTERED")
                 .build();
         record = operatorBroadcastRepository.save(record);
@@ -153,9 +159,16 @@ public class NotificationService {
                 .deliveries(broadcast.getDeliveries())
                 .filtered(broadcast.getFiltered())
                 .errors(broadcast.getErrors())
+                .deliveryTimeline(broadcast.getDeliveryTimeline() != null
+                        ? broadcast.getDeliveryTimeline()
+                        : List.of())
                 .status(broadcast.getStatus())
                 .createdAt(broadcast.getCreatedAt())
                 .build();
+    }
+
+    private long offsetMillis(long startedAt) {
+        return Math.max(0L, (System.nanoTime() - startedAt) / 1_000_000L);
     }
 
     private String normalize(String value, String fallback) {

@@ -90,6 +90,7 @@ export interface BroadcastHistory {
   filtered: number
   errors: number
   status: string
+  deliveryTimeline?: number[]
   createdAt: string
 }
 
