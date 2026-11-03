@@ -100,7 +100,9 @@ const chart = computed(() => {
   const points: ChartPoint[] = [{ x: 0, y: 0 }]
   if (offsets.length) {
     offsets.forEach((offset, index) => {
-      points.push({ x: Math.min(offset, maxX), y: index + 1 })
+      const x = Math.min(offset, maxX)
+      points.push({ x, y: index })
+      points.push({ x, y: index + 1 })
     })
   } else if (total > 0) {
     points.push({ x: 0, y: total })
