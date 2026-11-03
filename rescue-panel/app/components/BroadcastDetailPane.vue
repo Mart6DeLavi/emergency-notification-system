@@ -213,7 +213,7 @@ function copyText(value: string, label: string) {
         <span class="bd-kpi-icon bd-kpi-icon--blue"><i class="pi pi-send" /></span>
         <div>
           <span class="bd-kpi-label">Deliveries</span>
-          <strong class="bd-kpi-value">{{ broadcast.deliveries }}</strong>
+          <strong class="bd-kpi-value">{{ broadcast.deliveries }}<span class="bd-kpi-badge">{{ deliveredPercent }}%</span></strong>
           <small>jobs queued</small>
         </div>
       </article>
