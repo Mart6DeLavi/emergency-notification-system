@@ -17,13 +17,17 @@ let timer: ReturnType<typeof setTimeout> | null = null
 
 const tileUrl = computed(() =>
   props.dark
-    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+    ? 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}'
     : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+)
+
+const labelTileUrl = computed(() =>
+  'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
 )
 
 const tileAttribution = computed(() =>
   props.dark
-    ? '&copy; OpenStreetMap contributors &copy; CARTO'
+    ? 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ'
     : '&copy; OpenStreetMap contributors',
 )
 
@@ -117,6 +121,10 @@ onUnmounted(() => {
         :url="tileUrl"
         :attribution="tileAttribution"
       />
+      <LTileLayer
+        v-if="dark"
+        :url="labelTileUrl"
+      />
       <LCircle
         :lat-lng="coords"
         :radius="radiusMeters"
@@ -127,6 +135,11 @@ onUnmounted(() => {
           weight: 2,
           dashArray: '7 6',
         }"
+        color="#ef4444"
+        fill-color="#ef4444"
+        :fill-opacity="0.07"
+        :weight="2"
+        dash-array="7 6"
       />
       <LMarker :lat-lng="coords" :icon="pinIcon" />
       <LMarker
