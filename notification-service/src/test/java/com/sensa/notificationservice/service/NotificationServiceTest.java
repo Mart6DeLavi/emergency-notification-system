@@ -49,6 +49,9 @@ class NotificationServiceTest {
     @Mock
     private UserDataServiceClient userDataServiceClient;
 
+    @Mock
+    private EmailTemplateRenderer emailTemplateRenderer;
+
     @InjectMocks
     private NotificationService notificationService;
 
@@ -174,6 +177,9 @@ class NotificationServiceTest {
 
         when(templateServiceClient.getTemplateContent("emergency-alert"))
                 .thenReturn("Alert in {{city}} on {{street}}");
+        when(emailTemplateRenderer.detectType(anyString())).thenReturn("fire");
+        when(emailTemplateRenderer.render(anyString(), anyString(), anyString(), any(), any(), any()))
+                .thenReturn("<html>Email</html>");
 
         UserLocationResponse recipient = UserLocationResponse.builder()
                 .userId(userId)
@@ -206,12 +212,12 @@ class NotificationServiceTest {
                 .deviceToken("fcm-token")
                 .channel("EMAIL")
                 .title("Fire alert")
-                .content("Alert in Warsaw on Main St")
+                .content("<html>Email</html>")
                 .build();
 
         when(notificationMapper.toDeliveryEvent(eq(recipient), eq("PUSH"), eq("Fire alert"), eq("Alert in Warsaw on Main St")))
                 .thenReturn(pushEvent);
-        when(notificationMapper.toDeliveryEvent(eq(recipient), eq("EMAIL"), eq("Fire alert"), eq("Alert in Warsaw on Main St")))
+        when(notificationMapper.toDeliveryEvent(eq(recipient), eq("EMAIL"), eq("Fire alert"), eq("<html>Email</html>")))
                 .thenReturn(emailEvent);
 
         notificationService.handleEmergencyConfirmed(event);
@@ -233,6 +239,9 @@ class NotificationServiceTest {
 
         when(templateServiceClient.getTemplateContent("emergency-alert"))
                 .thenReturn("Alert");
+        when(emailTemplateRenderer.detectType(anyString())).thenReturn("other");
+        when(emailTemplateRenderer.render(anyString(), anyString(), anyString(), any(), any(), any()))
+                .thenReturn("<html>Email</html>");
         when(userDataServiceClient.getRecipientsByLocation("Warsaw", "Main St"))
                 .thenReturn(List.of());
 
