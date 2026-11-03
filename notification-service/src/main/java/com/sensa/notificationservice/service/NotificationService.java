@@ -42,6 +42,7 @@ public class NotificationService {
     private final RabbitTemplate rabbitTemplate;
     private final TemplateServiceClient templateServiceClient;
     private final UserDataServiceClient userDataServiceClient;
+    private final EmailTemplateRenderer emailTemplateRenderer;
 
     @CacheEvict(cacheNames = "notifications", key = "#userId")
     public NotificationResponse createNotification(NotificationRequest request, UUID userId) {
@@ -64,6 +65,13 @@ public class NotificationService {
                 : userDataServiceClient.getAllRecipients();
 
         String deliveryContent = request.message().replace("\n", "<br>");
+        String emailContent = emailTemplateRenderer.render(
+                request.alertType(),
+                request.title(),
+                request.message(),
+                request.city(),
+                request.street(),
+                request.radiusKm());
         long startedAt = System.nanoTime();
         List<Long> deliveryTimeline = new ArrayList<>();
         int alerted = 0;
@@ -101,7 +109,7 @@ public class NotificationService {
                 deliveryTimeline.add(offsetMillis(startedAt));
             }
             if (email) {
-                sendDelivery(recipient, "EMAIL", request.title(), deliveryContent);
+                sendDelivery(recipient, "EMAIL", request.title(), emailContent);
                 deliveries++;
                 deliveryTimeline.add(offsetMillis(startedAt));
             }
@@ -205,7 +213,21 @@ public class NotificationService {
 
         String templateContent = templateServiceClient.getTemplateContent(event.templateName());
         String renderedContent = render(templateContent, event.templateData());
-        String title = event.title() != null ? event.title() : "";
+        String title = event.title() != null && !event.title().isBlank()
+                ? event.title()
+                : "Emergency alert";
+        String description = event.description() != null
+                ? event.description()
+                : event.templateData() == null
+                        ? ""
+                        : event.templateData().getOrDefault("description", "");
+        String emailContent = emailTemplateRenderer.render(
+                emailTemplateRenderer.detectType(title + " " + description),
+                title,
+                description,
+                event.city(),
+                event.street(),
+                null);
 
         List<UserLocationResponse> recipients =
                 userDataServiceClient.getRecipientsByLocation(event.city(), event.street());
@@ -216,7 +238,7 @@ public class NotificationService {
                 sendDelivery(recipient, "PUSH", title, renderedContent);
             }
             if (recipient.emailEnabled()) {
-                sendDelivery(recipient, "EMAIL", title, renderedContent);
+                sendDelivery(recipient, "EMAIL", title, emailContent);
             }
             if (recipient.sms()) {
                 sendDelivery(recipient, "SMS", title, renderedContent);

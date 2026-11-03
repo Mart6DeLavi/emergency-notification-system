@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="x-apple-disable-message-reformatting">
+    <title th:text="${title}">Emergency alert</title>
+    <style>
+        html, body { margin: 0 !important; padding: 0 !important; width: 100% !important; }
+        * { -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-collapse: collapse; }
+        img { border: 0; outline: none; text-decoration: none; }
+        .email-card { width: 600px; max-width: 600px; }
+        .email-header { background-color: #6d28d9; }
+        .email-accent { background-color: #a78bfa; }
+        .title { font-size: 27px; line-height: 1.25; }
+        .message { font-size: 16px; line-height: 1.7; }
+        @media only screen and (max-width: 600px) {
+            .email-card { width: 100% !important; max-width: 100% !important; border-radius: 0 !important; }
+            .email-header { padding: 22px 20px 20px 20px !important; }
+            .email-body { padding: 24px 20px 8px 20px !important; }
+            .email-footer { padding: 16px 20px 24px 20px !important; }
+            .title { font-size: 23px !important; }
+            .message { font-size: 15px !important; line-height: 1.65 !important; }
+            .type-icon { font-size: 30px !important; }
+            .info-card { border-radius: 10px !important; }
+            .mobile-stack, .mobile-stack tbody, .mobile-stack tr, .mobile-stack td {
+                display: block !important; width: 100% !important;
+            }
+        }
+    </style>
+</head>
+<body style="margin:0;padding:0;background-color:#eef2f7;font-family:Arial,Helvetica,sans-serif;color:#334155;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;" th:text="${preheader}">Emergency alert</div>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#eef2f7;">
+    <tr>
+        <td align="center" style="padding:24px 12px;">
+            <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" class="email-card"
+                   style="width:600px;max-width:600px;background-color:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 8px 30px rgba(15,23,42,0.08);">
+                <tr>
+                    <td class="email-header" style="background-color:#6d28d9;padding:26px 32px 24px 32px;">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                                <td valign="middle">
+                                    <div style="font-size:20px;line-height:1.1;font-weight:800;letter-spacing:3px;color:#ffffff;">SENSA</div>
+                                    <div style="margin-top:5px;font-size:9px;line-height:1.2;letter-spacing:2.2px;color:rgba(255,255,255,0.72);">EMERGENCY NOTIFICATION SYSTEM</div>
+                                </td>
+                                <td valign="middle" align="right" class="type-icon" style="font-size:36px;line-height:1;">🚪</td>
+                            </tr>
+                        </table>
+                        <div style="margin-top:20px;font-size:11px;line-height:1.2;font-weight:700;letter-spacing:2.2px;color:rgba(255,255,255,0.82);">EVACUATION ORDER</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="email-accent" style="height:5px;background-color:#a78bfa;font-size:0;line-height:0;">&nbsp;</td>
+                </tr>
+                <tr>
+                    <td class="email-body" style="padding:28px 32px 10px 32px;background-color:#ffffff;">
+                        <h1 class="title" th:text="${title}" style="margin:0 0 14px 0;color:#0f172a;font-weight:800;font-size:27px;line-height:1.25;">Evacuation notice</h1>
+                        <p style="margin:0 0 16px 0;font-size:14px;line-height:1.65;color:#475569;">An evacuation order is in effect for your area. Leave the zone calmly using the safest available route.</p>
+                        <p class="message" th:utext="${messageHtml}" style="margin:0 0 22px 0;font-size:16px;line-height:1.7;color:#334155;word-break:break-word;">Emergency details</p>
+
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="info-card"
+                               style="width:100%;background-color:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;">
+                            <tr>
+                                <td style="padding:14px 16px 14px 16px;">
+                                    <div style="font-size:10px;line-height:1.2;font-weight:700;letter-spacing:1.7px;color:#64748b;">AFFECTED AREA</div>
+                                    <div style="margin-top:5px;font-size:15px;line-height:1.5;font-weight:600;color:#0f172a;" th:text="${location}">Opole</div>
+                                    <div th:if="${!#strings.isEmpty(radius)}" style="margin-top:4px;font-size:12px;line-height:1.5;color:#64748b;" th:text="'Radius: ' + ${radius}">Radius: 2.5 km</div>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:18px;">
+                            <tr>
+                                <td style="font-size:12px;line-height:1.5;color:#64748b;" th:text="'Sent ' + ${sentAt}">Sent 03 Nov 2026, 20:42</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:18px 32px 0 32px;background-color:#ffffff;">
+                        <div style="height:1px;background-color:#e2e8f0;font-size:0;line-height:0;">&nbsp;</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="email-footer" style="padding:18px 32px 26px 32px;background-color:#f8fafc;">
+                        <div style="font-size:13px;line-height:1.2;font-weight:700;color:#0f172a;">SENSA</div>
+                        <div style="margin-top:5px;font-size:11px;line-height:1.65;color:#64748b;">
+                            You are receiving this email because emergency alerts are enabled in your profile.<br>
+                            <a th:href="${panelUrl}" th:text="${panelUrl}" style="color:#475569;text-decoration:underline;word-break:break-all;">https://panel.sensanotify.com</a>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>
