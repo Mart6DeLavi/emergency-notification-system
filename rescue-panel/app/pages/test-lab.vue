@@ -46,7 +46,7 @@ onBeforeUnmount(() => {
 
 async function loadMode() {
   try {
-    mode.value = await api<TestModeState>('/v1/test-lab/settings')
+    mode.value = await api<TestModeState>('/api/v1/test-lab/settings')
   } catch (e: any) {
     error.value = e?.message || 'Failed to load test mode'
   }
@@ -55,7 +55,7 @@ async function loadMode() {
 async function loadRuns() {
   historyLoading.value = true
   try {
-    const page = await api<TestRunPage>('/v1/test-lab/runs?limit=30')
+    const page = await api<TestRunPage>('/api/v1/test-lab/runs?limit=30')
     runs.value = page.items.map(normalizeRun)
     total.value = page.total
   } catch (e: any) {
@@ -68,7 +68,7 @@ async function loadRuns() {
 async function toggleMode() {
   if (!mode.value) return
   try {
-    mode.value = await api<TestModeState>('/v1/test-lab/settings', {
+    mode.value = await api<TestModeState>('/api/v1/test-lab/settings', {
       method: 'PATCH',
       body: { enabled: !mode.value.enabled, ttlSeconds: 1800 },
     })
@@ -88,7 +88,7 @@ async function startRun() {
   running.value = true
   error.value = ''
   try {
-    const created = await api<TestRun>('/v1/test-lab/runs', {
+    const created = await api<TestRun>('/api/v1/test-lab/runs', {
       method: 'POST',
       body: {
         scenario: scenario.value,
@@ -114,7 +114,7 @@ function startPolling(id: string) {
   if (poll) clearInterval(poll)
   poll = setInterval(async () => {
     try {
-      const run = normalizeRun(await api<TestRun>(`/v1/test-lab/runs/${id}`))
+      const run = normalizeRun(await api<TestRun>(`/api/v1/test-lab/runs/${id}`))
       selected.value = run
       if (run.status !== 'RUNNING') {
         if (poll) clearInterval(poll)
@@ -129,14 +129,14 @@ function startPolling(id: string) {
 }
 
 async function openRun(run: TestRun) {
-  selected.value = normalizeRun(await api<TestRun>(`/v1/test-lab/runs/${run.id}`))
+  selected.value = normalizeRun(await api<TestRun>(`/api/v1/test-lab/runs/${run.id}`))
   if (run.status === 'RUNNING') startPolling(run.id)
 }
 
 async function stopRun() {
   if (!selected.value || selected.value.status !== 'RUNNING') return
   try {
-    selected.value = normalizeRun(await api<TestRun>(`/v1/test-lab/runs/${selected.value.id}/stop`, { method: 'POST' }))
+    selected.value = normalizeRun(await api<TestRun>(`/api/v1/test-lab/runs/${selected.value.id}/stop`, { method: 'POST' }))
     await Promise.all([loadRuns(), loadMode()])
   } catch (e: any) {
     error.value = e?.message || 'Failed to stop run'
