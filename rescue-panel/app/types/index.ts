@@ -107,3 +107,55 @@ export interface FileResponse {
   moderationConfidence: number | null
   createdAt: string
 }
+
+export interface TestModeState {
+  id?: string
+  enabled: boolean
+  runId: string | null
+  expiresAt: string | null
+}
+
+export interface TestRunEndpoint {
+  path: string
+  requests: number
+  errors: number
+  p95: number
+}
+
+export interface TestRunPoint {
+  t: number
+  rps: number
+  p95: number
+}
+
+export interface TestRun {
+  id: string
+  _id?: string
+  scenario: string
+  status: 'RUNNING' | 'COMPLETED' | 'FAILED' | 'STOPPED'
+  vus: number
+  durationSec: number
+  rampUpSec: number
+  target: string
+  startedAt: string
+  finishedAt: string | null
+  totalRequests: number
+  rps: number
+  successRate: number
+  count2xx: number
+  count3xx: number
+  count4xx: number
+  count5xx: number
+  p50: number
+  p95: number
+  p99: number
+  endpoints: TestRunEndpoint[]
+  series: TestRunPoint[]
+  testMode: boolean
+  operatorId: string | null
+}
+
+export interface TestRunPage {
+  items: TestRun[]
+  total: number
+}

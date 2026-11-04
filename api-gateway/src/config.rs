@@ -7,9 +7,15 @@ pub struct Config {
     pub server: ServerConfig,
     pub rate_limiter: RateLimiterConfig,
     pub load_balancer: LoadBalancerConfig,
+    #[serde(default = "default_test_lab_url")]
+    pub test_lab_url: String,
     #[serde(default)]
     pub cors: CorsConfig,
     pub routes: Vec<Route>,
+}
+
+fn default_test_lab_url() -> String {
+    "http://test-lab-service:8010".to_string()
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]

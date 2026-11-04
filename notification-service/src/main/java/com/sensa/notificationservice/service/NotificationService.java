@@ -56,8 +56,13 @@ public class NotificationService {
 
     @CacheEvict(cacheNames = "notifications", allEntries = true)
     public BroadcastResponse broadcast(BroadcastRequest request, UUID operatorId) {
-        log.info("Operator broadcast: operatorId={}, title={}, city={}, street={}",
-                operatorId, request.title(), request.city(), request.street());
+        return broadcast(request, operatorId, false, null);
+    }
+
+    @CacheEvict(cacheNames = "notifications", allEntries = true)
+    public BroadcastResponse broadcast(BroadcastRequest request, UUID operatorId, boolean testMode, String testRunId) {
+        log.info("Operator broadcast: operatorId={}, title={}, city={}, street={}, testMode={}, testRunId={}",
+                operatorId, request.title(), request.city(), request.street(), testMode, testRunId);
 
         boolean areaTargeted = request.city() != null && !request.city().isBlank();
         List<UserLocationResponse> recipients = areaTargeted
@@ -100,24 +105,43 @@ public class NotificationService {
                     .channel(primary)
                     .status(NotificationStatus.PENDING)
                     .build();
-            notificationRepository.save(entity);
+            if (!testMode) {
+                notificationRepository.save(entity);
+            }
             alerted++;
 
             if (push) {
-                sendDelivery(recipient, "PUSH", request.title(), deliveryContent);
+                if (!testMode) {
+                    sendDelivery(recipient, "PUSH", request.title(), deliveryContent);
+                }
                 deliveries++;
                 deliveryTimeline.add(offsetMillis(startedAt));
             }
             if (email) {
-                sendDelivery(recipient, "EMAIL", request.title(), emailContent);
+                if (!testMode) {
+                    sendDelivery(recipient, "EMAIL", request.title(), emailContent);
+                }
                 deliveries++;
                 deliveryTimeline.add(offsetMillis(startedAt));
             }
             if (sms) {
-                sendDelivery(recipient, "SMS", request.title(), deliveryContent);
+                if (!testMode) {
+                    sendDelivery(recipient, "SMS", request.title(), deliveryContent);
+                }
                 deliveries++;
                 deliveryTimeline.add(offsetMillis(startedAt));
             }
+        }
+
+        if (testMode) {
+            log.info("Test-mode broadcast suppressed: recipients={}, deliveries={}, filtered={}, runId={}",
+                    alerted, deliveries, filtered, testRunId);
+            return new BroadcastResponse(
+                    testRunId != null ? "test-" + testRunId : "test",
+                    alerted,
+                    deliveries,
+                    filtered,
+                    0);
         }
 
         OperatorBroadcast record = OperatorBroadcast.builder()

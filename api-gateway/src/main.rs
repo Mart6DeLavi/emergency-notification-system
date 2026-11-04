@@ -11,6 +11,8 @@ use serde::Deserialize;
 use serde::Serialize;
 use std::net::SocketAddr;
 use std::sync::Arc;
+use std::time::{Duration, Instant};
+use tokio::sync::Mutex;
 use tower_http::cors::{AllowOrigin, Any, CorsLayer};
 
 mod config;
@@ -18,6 +20,21 @@ mod config;
 #[derive(Clone)]
 struct AppState {
     config: Arc<Config>,
+    test_mode: Arc<Mutex<TestModeCache>>,
+}
+
+#[derive(Default)]
+struct TestModeCache {
+    checked_at: Option<Instant>,
+    enabled: bool,
+    run_id: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct TestLabState {
+    enabled: bool,
+    #[serde(rename = "runId")]
+    run_id: Option<String>,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -84,7 +101,63 @@ async fn proxy(State(state): State<AppState>, req: Request<Body>) -> Response {
         None => return service_unavailable(),
     };
 
+    let mut req = req;
+    if !path.starts_with("/api/v1/test-lab") {
+        apply_test_mode_headers(&state, &mut req).await;
+    }
+
     forward(&state, req, &instance).await
+}
+
+async fn apply_test_mode_headers(state: &AppState, req: &mut Request<Body>) {
+    let cache = {
+        let cached = state.test_mode.lock().await;
+        if cached.checked_at.map(|t| t.elapsed() < Duration::from_secs(1)).unwrap_or(false) {
+            Some((cached.enabled, cached.run_id.clone()))
+        } else {
+            None
+        }
+    };
+
+    let (enabled, run_id) = match cache {
+        Some(value) => value,
+        None => {
+            let url = format!("{}/api/v1/test-lab/state", state.config.test_lab_url);
+            let result = reqwest::Client::new()
+                .get(&url)
+                .timeout(Duration::from_secs(2))
+                .send()
+                .await
+                .ok()
+                .and_then(|r| if r.status().is_success() { Some(r) } else { None });
+
+            let (enabled, run_id) = match result {
+                Some(response) => match response.json::<TestLabState>().await {
+                    Ok(value) => (value.enabled, value.run_id),
+                    Err(_) => (false, None),
+                },
+                None => (false, None),
+            };
+
+            let mut cached = state.test_mode.lock().await;
+            cached.checked_at = Some(Instant::now());
+            cached.enabled = enabled;
+            cached.run_id = run_id.clone();
+            (enabled, run_id)
+        }
+    };
+
+    if enabled {
+        req.headers_mut().insert(
+            "x-sensa-test-mode",
+            HeaderValue::from_static("true"),
+        );
+        if let Some(run_id) = run_id {
+            if let Ok(value) = HeaderValue::from_str(&run_id) {
+                req.headers_mut().insert("x-sensa-test-run", value);
+            }
+        }
+    }
 }
 
 async fn rate_limit_allows(state: &AppState, client_ip: &str, service: &str) -> bool {
@@ -245,7 +318,10 @@ async fn main() {
     let cors = build_cors(&config);
     let (prometheus_layer, metric_handle) = PrometheusMetricLayer::pair();
     let metrics = metric_handle.clone();
-    let state = AppState { config };
+    let state = AppState {
+        config,
+        test_mode: Arc::new(Mutex::new(TestModeCache::default())),
+    };
 
     let app = Router::new()
         .route("/actuator/health", get(health))

@@ -20,3 +20,6 @@ services:
   filesystem-service:
     - host: filesystem-service
       port: 8002
+  test-lab-service:
+    - host: test-lab-service
+      port: 8010

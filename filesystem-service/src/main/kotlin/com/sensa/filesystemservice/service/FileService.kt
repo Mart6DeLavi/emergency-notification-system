@@ -48,7 +48,27 @@ class FileService(
     @Value("\${spring.kafka.topics.file-moderated:file.moderated}")
     private lateinit var fileModeratedTopic: String
 
-    fun uploadFiles(files: List<MultipartFile>, userId: UUID): List<FileUploadResult> {
+    fun uploadFiles(
+        files: List<MultipartFile>,
+        userId: UUID,
+        testMode: Boolean = false,
+        testRunId: String? = null
+    ): List<FileUploadResult> {
+        if (testMode) {
+            log.info(
+                "TEST MODE: skipping S3 and persistence for {} file(s), userId={}, runId={}",
+                files.size, userId, testRunId
+            )
+            return files.mapIndexed { index, file ->
+                FileUploadResult(
+                    fileId = -(index + 1L),
+                    url = "https://test.invalid/${testRunId ?: "manual"}/$index",
+                    moderationStatus = ModerationStatus.APPROVED,
+                    confidencePercentage = 100.0
+                )
+            }
+        }
+
         log.info("Uploading {} file(s) for userId={}", files.size, userId)
         return files.map { file -> processFile(file, userId) }
     }

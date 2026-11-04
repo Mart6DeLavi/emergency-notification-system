@@ -7,6 +7,8 @@ rate_limiter:
 load_balancer:
   url: "http://load-balancer-service:8008"
 
+test_lab_url: "http://test-lab-service:8010"
+
 cors:
   allowed_origins:
     - "https://panel.sensanotify.com"
@@ -25,3 +27,5 @@ routes:
     service: "emergency-situation-request-service"
   - path: "/api/v1/files"
     service: "filesystem-service"
+  - path: "/api/v1/test-lab"
+    service: "test-lab-service"
