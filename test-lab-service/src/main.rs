@@ -364,20 +364,33 @@ async fn run_k6(
 fn f64_at(value: &Value, keys: &[&str]) -> f64 {
     let mut current = value;
     for key in keys {
-        current = &current[*key];
+        current = current.get(*key).unwrap_or(&Value::Null);
     }
     current.as_f64().unwrap_or(0.0)
 }
 
+/// k6 v0.54 exports metrics at `metrics.<name>.<key>`, while older
+/// versions nested them under `metrics.<name>.values.<key>`. Read both.
+fn metric_f64(summary: &Value, metric: &str, key: &str) -> f64 {
+    let direct = f64_at(summary, &["metrics", metric, key]);
+    if direct != 0.0 {
+        return direct;
+    }
+    f64_at(summary, &["metrics", metric, "values", key])
+}
+
 async fn mark_completed(state: &AppState, run_id: &str, summary: &Value) {
-    let count = f64_at(summary, &["metrics", "http_reqs", "values", "count"]);
-    let rate = f64_at(summary, &["metrics", "http_reqs", "values", "rate"]);
-    let failed = f64_at(summary, &["metrics", "http_req_failed", "values", "rate"]);
-    let p50 = f64_at(summary, &["metrics", "http_req_duration", "values", "p(50)"]);
-    let p95 = f64_at(summary, &["metrics", "http_req_duration", "values", "p(95)"]);
-    let p99 = f64_at(summary, &["metrics", "http_req_duration", "values", "p(99)"]);
-    let failures = (count * failed).round() as i64;
+    let count = metric_f64(summary, "http_reqs", "count");
+    let rate = metric_f64(summary, "http_reqs", "rate");
+    let failed = metric_f64(summary, "http_req_failed", "value");
+    let p50 = metric_f64(summary, "http_req_duration", "med");
+    let p95 = metric_f64(summary, "http_req_duration", "p(95)");
+    let p99 = {
+        let value = metric_f64(summary, "http_req_duration", "p(99)");
+        if value > 0.0 { value } else { p95 }
+    };
     let total = count.round() as i64;
+    let failures = (count * failed).round() as i64;
 
     let update = doc! {
         "$set": {
