@@ -130,6 +130,7 @@ export interface TestRunPoint {
 
 export interface TestRun {
   id: string
+  _id?: string
   scenario: string
   status: 'RUNNING' | 'COMPLETED' | 'FAILED' | 'STOPPED'
   vus: number

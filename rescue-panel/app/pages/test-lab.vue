@@ -31,6 +31,10 @@ const presets = [
 
 let poll: ReturnType<typeof setInterval> | null = null
 
+function normalizeRun(run: TestRun): TestRun {
+  return { ...run, id: run.id || run._id || '' }
+}
+
 onMounted(async () => {
   await Promise.all([loadMode(), loadRuns()])
   loading.value = false
@@ -52,7 +56,7 @@ async function loadRuns() {
   historyLoading.value = true
   try {
     const page = await api<TestRunPage>('/v1/test-lab/runs?limit=30')
-    runs.value = page.items
+    runs.value = page.items.map(normalizeRun)
     total.value = page.total
   } catch (e: any) {
     error.value = e?.message || 'Failed to load test history'
@@ -84,7 +88,7 @@ async function startRun() {
   running.value = true
   error.value = ''
   try {
-    const run = await api<TestRun>('/v1/test-lab/runs', {
+    const created = await api<TestRun>('/v1/test-lab/runs', {
       method: 'POST',
       body: {
         scenario: scenario.value,
@@ -93,6 +97,7 @@ async function startRun() {
         rampUpSec: 0,
       },
     })
+    const run = normalizeRun(created)
     selected.value = run
     await loadMode()
     startPolling(run.id)
@@ -109,7 +114,7 @@ function startPolling(id: string) {
   if (poll) clearInterval(poll)
   poll = setInterval(async () => {
     try {
-      const run = await api<TestRun>(`/v1/test-lab/runs/${id}`)
+      const run = normalizeRun(await api<TestRun>(`/v1/test-lab/runs/${id}`))
       selected.value = run
       if (run.status !== 'RUNNING') {
         if (poll) clearInterval(poll)
@@ -124,14 +129,14 @@ function startPolling(id: string) {
 }
 
 async function openRun(run: TestRun) {
-  selected.value = await api<TestRun>(`/v1/test-lab/runs/${run.id}`)
+  selected.value = normalizeRun(await api<TestRun>(`/v1/test-lab/runs/${run.id}`))
   if (run.status === 'RUNNING') startPolling(run.id)
 }
 
 async function stopRun() {
   if (!selected.value || selected.value.status !== 'RUNNING') return
   try {
-    selected.value = await api<TestRun>(`/v1/test-lab/runs/${selected.value.id}/stop`, { method: 'POST' })
+    selected.value = normalizeRun(await api<TestRun>(`/v1/test-lab/runs/${selected.value.id}/stop`, { method: 'POST' }))
     await Promise.all([loadRuns(), loadMode()])
   } catch (e: any) {
     error.value = e?.message || 'Failed to stop run'
