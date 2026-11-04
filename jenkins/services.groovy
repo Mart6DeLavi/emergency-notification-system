@@ -21,7 +21,8 @@ def rustServices() {
         'message-delivery-service',
         'load-balancer-service',
         'rate-limiter-service',
-        'api-gateway'
+        'api-gateway',
+        'test-lab-service'
     ]
 }
 

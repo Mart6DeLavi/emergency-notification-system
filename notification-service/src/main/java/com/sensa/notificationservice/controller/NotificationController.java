@@ -52,9 +52,11 @@ public class NotificationController {
     @PostMapping("/broadcast")
     public ResponseEntity<BroadcastResponse> broadcast(
             @AuthenticationPrincipal UUID operatorId,
+            @RequestHeader(value = "X-Sensa-Test-Mode", required = false, defaultValue = "false") boolean testMode,
+            @RequestHeader(value = "X-Sensa-Test-Run", required = false) String testRunId,
             @RequestBody @Valid BroadcastRequest request
     ) {
-        return ResponseEntity.ok(notificationService.broadcast(request, operatorId));
+        return ResponseEntity.ok(notificationService.broadcast(request, operatorId, testMode, testRunId));
     }
 
     @Operation(summary = "Broadcast history", description = "Returns recent operator broadcasts")

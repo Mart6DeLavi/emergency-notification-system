@@ -65,6 +65,15 @@ function logout() {
         <span>{{ t('notify') }}</span>
       </NuxtLink>
 
+      <NuxtLink
+        to="/test-lab"
+        class="app-nav-item"
+        :class="{ active: route.path.startsWith('/test-lab') }"
+      >
+        <i class="pi pi-chart-bar" />
+        <span>{{ t('testLab') }}</span>
+      </NuxtLink>
+
       <div class="sidebar-spacer" />
 
       <button type="button" class="account-button" @click="accountOpen = true">

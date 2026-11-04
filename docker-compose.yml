@@ -351,6 +351,23 @@ services:
     networks:
       - sensa-network
 
+  test-lab-service:
+    image: ${DOCKER_IMAGE_PREFIX:-sensa}/test-lab-service:${IMAGE_TAG:-latest}
+    build: ./test-lab-service
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8010:8010"
+    environment:
+      MONGO_URI: mongodb://mongo:27017
+      JWT_USER_SECRET: ${JWT_USER_SECRET:?JWT_USER_SECRET is required}
+      API_BASE_URL: http://api-gateway:8007
+      RUST_LOG: ${RUST_LOG:-info}
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - sensa-network
+
   # ---------------------------------------------------------------------------
   # Frontend
   # ---------------------------------------------------------------------------

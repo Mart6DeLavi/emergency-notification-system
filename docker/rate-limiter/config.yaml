@@ -23,3 +23,6 @@ limits:
   filesystem-service:
     capacity: 10
     refill_per_second: 1.0
+  test-lab-service:
+    capacity: 30
+    refill_per_second: 3.0

@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestPart
 import org.springframework.web.bind.annotation.RestController
@@ -39,10 +40,12 @@ class FileController(
     @PostMapping
     fun upload(
         @AuthenticationPrincipal userId: UUID,
-        @RequestPart("files") files: List<MultipartFile>
+        @RequestPart("files") files: List<MultipartFile>,
+        @RequestHeader(value = "X-Sensa-Test-Mode", required = false, defaultValue = "false") testMode: Boolean,
+        @RequestHeader(value = "X-Sensa-Test-Run", required = false) testRunId: String?
     ): ResponseEntity<List<FileUploadResult>> {
         return ResponseEntity.status(HttpStatus.CREATED)
-            .body(fileService.uploadFiles(files, userId))
+            .body(fileService.uploadFiles(files, userId, testMode, testRunId))
     }
 
     @Operation(summary = "Link files to emergency", description = "Sets emergency_situation_id on a list of files")
