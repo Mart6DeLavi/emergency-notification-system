@@ -201,8 +201,19 @@ async fn forward(state: &AppState, req: Request<Body>, instance: &InstanceRespon
         .request(method, &target)
         .headers(filter_hop_by_hop(headers));
 
-    if let Some(stream) = body_into_stream(body) {
-        request = request.body(reqwest::Body::wrap_stream(stream));
+    let has_body = parts
+        .headers
+        .get("content-length")
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.parse::<u64>().ok())
+        .map(|length| length > 0)
+        .unwrap_or(false)
+        || parts.headers.contains_key("transfer-encoding");
+
+    if has_body {
+        if let Some(stream) = body_into_stream(body) {
+            request = request.body(reqwest::Body::wrap_stream(stream));
+        }
     } else {
         request = request.body(reqwest::Body::default());
     }
