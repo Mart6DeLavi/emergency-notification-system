@@ -21,6 +21,7 @@ mod config;
 struct AppState {
     config: Arc<Config>,
     test_mode: Arc<Mutex<TestModeCache>>,
+    http: reqwest::Client,
 }
 
 #[derive(Default)]
@@ -123,7 +124,7 @@ async fn apply_test_mode_headers(state: &AppState, req: &mut Request<Body>) {
         Some(value) => value,
         None => {
             let url = format!("{}/api/v1/test-lab/state", state.config.test_lab_url);
-            let result = reqwest::Client::new()
+            let result = state.http
                 .get(&url)
                 .timeout(Duration::from_secs(2))
                 .send()
@@ -161,14 +162,13 @@ async fn apply_test_mode_headers(state: &AppState, req: &mut Request<Body>) {
 }
 
 async fn rate_limit_allows(state: &AppState, client_ip: &str, service: &str) -> bool {
-    let client = reqwest::Client::new();
     let body = RateLimitCheckRequest {
         client_ip: client_ip.to_string(),
         service: service.to_string(),
     };
 
     let url = format!("{}/api/v1/check", state.config.rate_limiter.url);
-    match client.post(&url).json(&body).send().await {
+    match state.http.post(&url).json(&body).send().await {
         Ok(resp) => match resp.json::<RateLimitCheckResponse>().await {
             Ok(check) => check.allowed,
             Err(_) => true,
@@ -178,13 +178,12 @@ async fn rate_limit_allows(state: &AppState, client_ip: &str, service: &str) -> 
 }
 
 async fn load_balance(state: &AppState, service: &str) -> Option<InstanceResponse> {
-    let client = reqwest::Client::new();
     let url = format!(
         "{}/api/v1/instances/{}",
         state.config.load_balancer.url, service
     );
 
-    match client.get(&url).send().await {
+    match state.http.get(&url).send().await {
         Ok(resp) => resp.json::<InstanceResponse>().await.ok(),
         Err(_) => None,
     }
@@ -197,10 +196,8 @@ async fn forward(state: &AppState, req: Request<Body>, instance: &InstanceRespon
     let method = parts.method.clone();
 
     let headers = parts.headers.clone();
-    let _ = state; // config not needed for forward
 
-    let client = reqwest::Client::new();
-    let mut request = client
+    let mut request = state.http
         .request(method, &target)
         .headers(filter_hop_by_hop(headers));
 
@@ -321,6 +318,10 @@ async fn main() {
     let state = AppState {
         config,
         test_mode: Arc::new(Mutex::new(TestModeCache::default())),
+        http: reqwest::Client::builder()
+            .pool_idle_timeout(Duration::from_secs(90))
+            .build()
+            .expect("failed to build HTTP client"),
     };
 
     let app = Router::new()
