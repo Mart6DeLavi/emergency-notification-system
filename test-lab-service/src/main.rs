@@ -345,12 +345,19 @@ async fn run_k6(
 
     let output = child.wait_with_output().await;
     let status = output.as_ref().map(|o| o.status.success()).unwrap_or(false);
+    let exit_code = output.as_ref().ok().and_then(|o| o.status.code());
     let stderr = output
         .as_ref()
         .map(|o| String::from_utf8_lossy(&o.stderr).to_string())
         .unwrap_or_default();
 
-    if status {
+    // k6 exits with 99 when thresholds are crossed but still writes a valid
+    // summary. Record that run as completed so failures remain visible instead
+    // of losing the result entirely.
+    let has_summary = std::path::Path::new(&summary_path).exists();
+    let completed = status || (exit_code == Some(99) && has_summary);
+
+    if completed {
         let series = parse_series(&points_path);
         match std::fs::read_to_string(&summary_path) {
             Ok(contents) => match serde_json::from_str::<Value>(&contents) {
