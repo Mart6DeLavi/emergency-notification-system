@@ -54,7 +54,12 @@ pub struct EndpointResult {
 pub struct SeriesPoint {
     pub t: i64,
     pub rps: f64,
+    #[serde(default)]
     pub p95: f64,
+    #[serde(default)]
+    pub vus: f64,
+    #[serde(default)]
+    pub success: f64,
 }
 
 #[derive(Debug, Deserialize)]
