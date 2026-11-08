@@ -26,9 +26,9 @@ const scenarioFilter = ref('all')
 const statusFilter = ref('all')
 
 const scenarios = [
-  { id: 'read', label: 'Read API', hint: 'alerts + my reports', icon: 'pi pi-search' },
+  { id: 'read', label: 'Read API', hint: 'alerts + my reports', icon: 'pi pi-book' },
   { id: 'broadcast', label: 'Broadcast', hint: 'operator alert, suppressed', icon: 'pi pi-megaphone' },
-  { id: 'mixed', label: 'Mixed', hint: 'read + broadcast', icon: 'pi pi-shuffle' },
+  { id: 'mixed', label: 'Mixed', hint: 'read + broadcast', icon: 'pi pi-clone' },
 ]
 
 const presets = [
@@ -594,13 +594,16 @@ function pct(value?: number | null) {
     </div>
 
     <div class="tl-grid">
-      <section class="tl-card">
+      <section class="tl-card tl-run-card">
         <div class="tl-card-title">
-          <span>Run a load test</span>
+          <span class="tl-card-heading">
+            <span class="tl-heading-icon"><i class="pi pi-play" /></span>
+            Run a load test
+          </span>
           <span class="tl-target"><i class="pi pi-link" /> internal gateway</span>
         </div>
 
-        <div class="tl-label">Scenario</div>
+        <div class="tl-label">Test scenario</div>
         <div class="tl-scenarios">
           <button
             v-for="item in scenarios"
@@ -616,7 +619,7 @@ function pct(value?: number | null) {
           </button>
         </div>
 
-        <div class="tl-label">Preset</div>
+        <div class="tl-label">Load preset</div>
         <div class="tl-presets">
           <button
             v-for="preset in presets"
@@ -1159,7 +1162,7 @@ function pct(value?: number | null) {
   display: grid;
   grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.48fr);
   gap: 16px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .tl-card {
@@ -1169,6 +1172,25 @@ function pct(value?: number | null) {
   padding: 16px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
   min-width: 0;
+  height: 100%;
+}
+
+.tl-card-heading {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tl-heading-icon {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 9px;
 }
 
 .tl-card-title {
@@ -1204,10 +1226,10 @@ function pct(value?: number | null) {
 .tl-label {
   margin: 12px 0 7px;
   color: var(--muted);
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 1.2px;
-  text-transform: uppercase;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .tl-label:first-of-type {
@@ -1263,14 +1285,14 @@ function pct(value?: number | null) {
 }
 
 .tl-scenario.active {
-  border-color: rgba(167, 139, 250, 0.5);
-  background: linear-gradient(180deg, rgba(167, 139, 250, 0.14), rgba(167, 139, 250, 0.04));
+  border-color: rgba(52, 211, 153, 0.48);
+  background: linear-gradient(180deg, rgba(52, 211, 153, 0.13), rgba(52, 211, 153, 0.03));
 }
 
 .tl-scenario.active .tl-scenario-icon {
-  color: var(--violet);
-  border-color: rgba(167, 139, 250, 0.3);
-  background: rgba(167, 139, 250, 0.12);
+  color: #34d399;
+  border-color: rgba(52, 211, 153, 0.32);
+  background: rgba(52, 211, 153, 0.12);
 }
 
 .tl-presets {
@@ -1308,8 +1330,8 @@ function pct(value?: number | null) {
 }
 
 .tl-preset.active {
-  border-color: rgba(167, 139, 250, 0.4);
-  background: rgba(167, 139, 250, 0.08);
+  border-color: rgba(52, 211, 153, 0.42);
+  background: rgba(52, 211, 153, 0.08);
   color: var(--text);
 }
 
@@ -1399,7 +1421,14 @@ function pct(value?: number | null) {
 }
 
 .tl-result {
+  display: flex;
+  flex-direction: column;
   min-height: 420px;
+}
+
+.tl-result .tl-chart {
+  flex: 1;
+  min-height: 240px;
 }
 
 .tl-run-actions {
