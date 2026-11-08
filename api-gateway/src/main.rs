@@ -92,8 +92,14 @@ async fn proxy(State(state): State<AppState>, req: Request<Body>) -> Response {
     };
 
     let client_ip = extract_client_ip(&req);
+    let mut req = req;
 
-    if !rate_limit_allows(&state, &client_ip, &route.service).await {
+    if !path.starts_with("/api/v1/test-lab") {
+        apply_test_mode_headers(&state, &mut req).await;
+    }
+
+    let test_mode = req.headers().contains_key("x-sensa-test-mode");
+    if !test_mode && !rate_limit_allows(&state, &client_ip, &route.service).await {
         return too_many_requests();
     }
 
@@ -101,11 +107,6 @@ async fn proxy(State(state): State<AppState>, req: Request<Body>) -> Response {
         Some(i) => i,
         None => return service_unavailable(),
     };
-
-    let mut req = req;
-    if !path.starts_with("/api/v1/test-lab") {
-        apply_test_mode_headers(&state, &mut req).await;
-    }
 
     forward(&state, req, &instance).await
 }
