@@ -39,3 +39,5 @@ mobile/ios/.swiftpm/
 
 # local screenshots
 /2026-*.png
+
+/local.properties
