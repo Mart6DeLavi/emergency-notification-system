@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import type { TestModeState, TestRun, TestRunPage, TestRunPoint } from '~/types'
+import type { TestLabSummary, TestModeState, TestRun, TestRunPage, TestRunPoint } from '~/types'
 
 const api = useApi()
 const toast = useToast()
 
 const mode = ref<TestModeState | null>(null)
+const summary = ref<TestLabSummary | null>(null)
 const runs = ref<TestRun[]>([])
 const total = ref(0)
 const selected = ref<TestRun | null>(null)
@@ -59,6 +60,13 @@ const metrics = [
 type MetricId = (typeof metrics)[number]['id']
 type MetricField = (typeof metrics)[number]['field']
 
+const metricColors: Record<MetricId, string> = {
+  vu: '#8b5cf6',
+  rps: '#38bdf8',
+  success: '#34d399',
+  p95: '#fbbf24',
+}
+
 interface ChartPoint {
   x: number
   y: number
@@ -91,6 +99,7 @@ let clock: ReturnType<typeof setInterval> | null = null
 const series = computed<TestRunPoint[]>(() => selected.value?.series ?? [])
 
 const activeMetricMeta = computed(() => metrics.find((item) => item.id === activeMetric.value) ?? metrics[0]!)
+const chartColor = computed(() => metricColors[activeMetric.value])
 
 const filteredRuns = computed(() =>
   runs.value.filter((run) => {
@@ -99,8 +108,6 @@ const filteredRuns = computed(() =>
     return scenarioOk && statusOk
   }),
 )
-
-const latestCompleted = computed(() => runs.value.find((run) => run.status === 'COMPLETED') ?? null)
 
 const livePoint = computed<TestRunPoint | null>(() => series.value[series.value.length - 1] ?? null)
 const liveVus = computed(() => Math.round(livePoint.value?.vus ?? selected.value?.vus ?? 0))
@@ -226,7 +233,7 @@ onMounted(async () => {
   document.addEventListener('click', closeMenu)
   window.addEventListener('scroll', closeMenu, true)
   window.addEventListener('resize', closeMenu)
-  await Promise.all([loadMode(), loadRuns()])
+  await Promise.all([loadMode(), loadRuns(), loadSummary()])
 })
 
 onBeforeUnmount(() => {
@@ -271,6 +278,18 @@ async function loadRuns() {
   } finally {
     historyLoading.value = false
   }
+}
+
+async function loadSummary() {
+  try {
+    summary.value = await api<TestLabSummary>('/api/v1/test-lab/summary')
+  } catch (e: any) {
+    if (!error.value) error.value = e?.message || 'Failed to load test summary'
+  }
+}
+
+async function refreshRuns() {
+  await Promise.all([loadRuns(), loadSummary()])
 }
 
 async function setMode(enabled: boolean) {
@@ -321,7 +340,7 @@ async function startRun() {
       }),
     )
     selected.value = created
-    await Promise.all([loadMode(), loadRuns()])
+    await Promise.all([loadMode(), loadRuns(), loadSummary()])
     startPolling(created.id)
     toast.add({ severity: 'info', summary: 'Load test started', life: 2500 })
   } catch (e: any) {
@@ -344,7 +363,7 @@ function startPolling(id: string) {
       if (selected.value?.id === run.id) selected.value = run
       if (run.status !== 'RUNNING') {
         stopPolling()
-        await Promise.all([loadRuns(), loadMode()])
+        await Promise.all([loadRuns(), loadMode(), loadSummary()])
       }
     } catch {
       stopPolling()
@@ -378,7 +397,7 @@ async function stopRun() {
       await api<TestRun>(`/api/v1/test-lab/runs/${selected.value.id}/stop`, { method: 'POST' }),
     )
     stopPolling()
-    await Promise.all([loadRuns(), loadMode()])
+    await Promise.all([loadRuns(), loadMode(), loadSummary()])
     toast.add({ severity: 'info', summary: 'Run stopped', life: 2200 })
   } catch (e: any) {
     error.value = e?.message || 'Failed to stop run'
@@ -396,7 +415,7 @@ async function deleteRun(run: TestRun) {
       selected.value = null
     }
     closeMenu()
-    await loadRuns()
+    await refreshRuns()
     toast.add({ severity: 'success', summary: 'Test run deleted', life: 2200 })
   } catch (e: any) {
     error.value = e?.message || 'Failed to delete run'
@@ -541,35 +560,35 @@ function pct(value?: number | null) {
 
     <div class="tl-kpi-grid">
       <article class="tl-kpi">
-        <span class="tl-kpi-icon tl-kpi-icon--violet"><i class="pi pi-server" /></span>
+        <span class="tl-kpi-icon tl-kpi-icon--violet"><i class="pi pi-database" /></span>
         <div>
           <span class="tl-kpi-label">System capacity (est.)</span>
-          <strong>≈50,000 VU</strong>
-          <small>concurrent virtual users</small>
+          <strong>≈{{ num(summary?.peakVus ?? 0) }} VU</strong>
+          <small>peak tested virtual users</small>
         </div>
       </article>
       <article class="tl-kpi">
         <span class="tl-kpi-icon tl-kpi-icon--info"><i class="pi pi-bolt" /></span>
         <div>
-          <span class="tl-kpi-label">Max RPS (est.)</span>
-          <strong>12,400 req/s</strong>
-          <small>gateway throughput ceiling</small>
+          <span class="tl-kpi-label">Max RPS</span>
+          <strong>{{ (summary?.peakRps ?? 0).toFixed(0) }} req/s</strong>
+          <small>peak observed throughput</small>
         </div>
       </article>
       <article class="tl-kpi">
         <span class="tl-kpi-icon tl-kpi-icon--success"><i class="pi pi-check-circle" /></span>
         <div>
           <span class="tl-kpi-label">Last success rate</span>
-          <strong>{{ latestCompleted ? pct(latestCompleted.successRate) : '—' }}</strong>
-          <small>{{ latestCompleted ? scenarioLabel(latestCompleted.scenario) : 'No completed runs yet' }}</small>
+          <strong>{{ summary?.lastScenario ? pct(summary.lastSuccessRate) : '—' }}</strong>
+          <small>{{ summary?.lastScenario ? scenarioLabel(summary.lastScenario) : 'No completed runs yet' }}</small>
         </div>
       </article>
       <article class="tl-kpi">
         <span class="tl-kpi-icon tl-kpi-icon--warning"><i class="pi pi-clock" /></span>
         <div>
           <span class="tl-kpi-label">Last test duration</span>
-          <strong>{{ latestCompleted ? formatDuration(latestCompleted.durationSec) : '—' }}</strong>
-          <small>{{ latestCompleted ? `${latestCompleted.vus} VU · ${formatDate(latestCompleted.startedAt).slice(0, 10)}` : 'No completed runs yet' }}</small>
+          <strong>{{ summary?.lastStartedAt ? formatDuration(summary.lastDurationSec) : '—' }}</strong>
+          <small>{{ summary?.lastStartedAt ? formatDate(summary.lastStartedAt).slice(0, 10) : 'No completed runs yet' }}</small>
         </div>
       </article>
     </div>
@@ -673,22 +692,46 @@ function pct(value?: number | null) {
           </div>
 
           <div class="tl-mini-grid">
-            <div class="tl-mini">
+            <button
+              type="button"
+              class="tl-mini"
+              :class="{ active: activeMetric === 'vu' }"
+              :style="{ '--metric-color': metricColors.vu }"
+              @click="chooseMetric('vu')"
+            >
               <span><i class="pi pi-users" /> VU active</span>
               <strong>{{ num(liveVus) }}</strong>
-            </div>
-            <div class="tl-mini">
+            </button>
+            <button
+              type="button"
+              class="tl-mini"
+              :class="{ active: activeMetric === 'rps' }"
+              :style="{ '--metric-color': metricColors.rps }"
+              @click="chooseMetric('rps')"
+            >
               <span><i class="pi pi-bolt" /> RPS</span>
               <strong>{{ liveRps.toFixed(1) }}</strong>
-            </div>
-            <div class="tl-mini">
-              <span><i class="pi pi-check" /> Success rate</span>
+            </button>
+            <button
+              type="button"
+              class="tl-mini"
+              :class="{ active: activeMetric === 'success' }"
+              :style="{ '--metric-color': metricColors.success }"
+              @click="chooseMetric('success')"
+            >
+              <span><i class="pi pi-check-circle" /> Success rate</span>
               <strong>{{ pct(liveSuccess) }}</strong>
-            </div>
-            <div class="tl-mini">
+            </button>
+            <button
+              type="button"
+              class="tl-mini"
+              :class="{ active: activeMetric === 'p95' }"
+              :style="{ '--metric-color': metricColors.p95 }"
+              @click="chooseMetric('p95')"
+            >
               <span><i class="pi pi-clock" /> p95</span>
               <strong>{{ Math.round(liveP95) }} ms</strong>
-            </div>
+            </button>
           </div>
 
           <div class="tl-chart-head">
@@ -696,26 +739,20 @@ function pct(value?: number | null) {
               <span>{{ activeMetricMeta.label }} profile</span>
               <small v-if="chart.hasData">{{ chartMaxLabel }}</small>
             </div>
-            <div class="tl-metric-tabs" role="group" aria-label="Chart metric">
-              <button
-                v-for="metric in metrics"
-                :key="metric.id"
-                type="button"
-                :class="{ active: activeMetric === metric.id }"
-                @click="chooseMetric(metric.id)"
-              >
-                {{ metric.label }}
-              </button>
-            </div>
           </div>
 
-          <div class="tl-chart" :class="{ 'is-empty': !chart.hasData }" @mouseleave="hoverIndex = null">
+          <div
+            class="tl-chart"
+            :class="{ 'is-empty': !chart.hasData }"
+            :style="{ '--chart-color': chartColor }"
+            @mouseleave="hoverIndex = null"
+          >
             <template v-if="chart.hasData">
               <svg class="tl-chart-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
                 <defs>
                   <linearGradient id="tlChartFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.42" />
-                    <stop offset="100%" stop-color="#a78bfa" stop-opacity="0" />
+                    <stop offset="0%" stop-color="var(--chart-color)" stop-opacity="0.42" />
+                    <stop offset="100%" stop-color="var(--chart-color)" stop-opacity="0" />
                   </linearGradient>
                 </defs>
                 <line
@@ -813,7 +850,7 @@ function pct(value?: number | null) {
               </option>
             </select>
           </label>
-          <button type="button" class="tl-refresh" :disabled="historyLoading" @click="loadRuns">
+          <button type="button" class="tl-refresh" :disabled="historyLoading" @click="refreshRuns">
             <i :class="historyLoading ? 'pi pi-spin pi-spinner' : 'pi pi-refresh'" /> Refresh
           </button>
         </div>
@@ -1458,11 +1495,28 @@ function pct(value?: number | null) {
 }
 
 .tl-mini {
+  display: block;
+  width: 100%;
   padding: 9px 10px;
   border: 1px solid var(--border);
   border-radius: 9px;
   background: var(--bg);
+  color: inherit;
+  font: inherit;
+  text-align: left;
   min-width: 0;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.tl-mini:hover {
+  border-color: var(--border-strong);
+}
+
+.tl-mini.active {
+  border-color: var(--metric-color, var(--violet));
+  box-shadow: 0 0 0 1px var(--metric-color, var(--violet));
+  background: var(--surface-2);
 }
 
 .tl-mini span {
@@ -1477,6 +1531,11 @@ function pct(value?: number | null) {
 
 .tl-mini span i {
   font-size: 9px;
+}
+
+.tl-mini.active span,
+.tl-mini.active span i {
+  color: var(--metric-color, var(--violet));
 }
 
 .tl-mini strong {
@@ -1508,36 +1567,6 @@ function pct(value?: number | null) {
   font-weight: 400;
 }
 
-.tl-metric-tabs {
-  display: inline-flex;
-  gap: 2px;
-  padding: 3px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--bg);
-}
-
-.tl-metric-tabs button {
-  padding: 5px 9px;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--muted);
-  font-size: 9px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-}
-
-.tl-metric-tabs button:hover {
-  color: var(--text);
-}
-
-.tl-metric-tabs button.active {
-  background: rgba(167, 139, 250, 0.18);
-  color: #ddd6fe;
-}
-
 .tl-chart {
   position: relative;
   height: 260px;
@@ -1545,7 +1574,11 @@ function pct(value?: number | null) {
   border: 1px solid var(--border);
   border-radius: 11px;
   background:
-    radial-gradient(120% 100% at 50% 0%, rgba(167, 139, 250, 0.08), transparent 60%),
+    radial-gradient(
+      120% 100% at 50% 0%,
+      color-mix(in srgb, var(--chart-color, #8b5cf6) 10%, transparent),
+      transparent 60%
+    ),
     var(--bg);
   overflow: hidden;
 }
@@ -1566,15 +1599,17 @@ function pct(value?: number | null) {
 
 .tl-chart-line {
   fill: none;
-  stroke: #a78bfa;
+  stroke: var(--chart-color, #8b5cf6);
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
-  filter: drop-shadow(0 0 6px rgba(167, 139, 250, 0.35));
+  filter: drop-shadow(
+    0 0 6px color-mix(in srgb, var(--chart-color, #8b5cf6) 40%, transparent)
+  );
 }
 
 .tl-crosshair {
-  stroke: rgba(196, 181, 253, 0.35);
+  stroke: color-mix(in srgb, var(--chart-color, #8b5cf6) 40%, transparent);
   stroke-width: 1;
   stroke-dasharray: 3 3;
   vector-effect: non-scaling-stroke;
@@ -1587,8 +1622,8 @@ function pct(value?: number | null) {
   height: 5px;
   margin: -2.5px 0 0 -2.5px;
   border-radius: 50%;
-  background: #c4b5fd;
-  box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.16);
+  background: var(--chart-color, #8b5cf6);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--chart-color, #8b5cf6) 18%, transparent);
   pointer-events: none;
 }
 
@@ -1597,8 +1632,8 @@ function pct(value?: number | null) {
   width: 7px;
   height: 7px;
   margin: -3.5px 0 0 -3.5px;
-  background: #ede9fe;
-  box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.22);
+  background: var(--chart-color, #8b5cf6);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--chart-color, #8b5cf6) 25%, transparent);
 }
 
 .tl-chart-scale {
@@ -1622,7 +1657,7 @@ function pct(value?: number | null) {
   position: absolute;
   z-index: 3;
   padding: 6px 9px;
-  border: 1px solid rgba(167, 139, 250, 0.35);
+  border: 1px solid color-mix(in srgb, var(--chart-color, #8b5cf6) 35%, transparent);
   border-radius: 8px;
   background: #191527;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
@@ -1637,7 +1672,7 @@ function pct(value?: number | null) {
 
 .tl-chart-tooltip strong {
   display: block;
-  color: #ede9fe;
+  color: var(--chart-color, #8b5cf6);
   font-size: 12px;
 }
 

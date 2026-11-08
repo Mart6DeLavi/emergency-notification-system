@@ -79,6 +79,17 @@ pub struct SettingsRequest {
     pub run_id: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TestLabSummary {
+    pub peak_vus: u32,
+    pub peak_rps: f64,
+    pub last_success_rate: f64,
+    pub last_duration_sec: u64,
+    pub last_scenario: Option<String>,
+    pub last_started_at: Option<String>,
+}
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RunListResponse {

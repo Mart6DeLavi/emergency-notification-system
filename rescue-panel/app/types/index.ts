@@ -115,6 +115,15 @@ export interface TestModeState {
   expiresAt: string | null
 }
 
+export interface TestLabSummary {
+  peakVus: number
+  peakRps: number
+  lastSuccessRate: number
+  lastDurationSec: number
+  lastScenario: string | null
+  lastStartedAt: string | null
+}
+
 export interface TestRunEndpoint {
   path: string
   requests: number
