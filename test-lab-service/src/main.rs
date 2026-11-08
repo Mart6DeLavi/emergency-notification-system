@@ -22,7 +22,8 @@ mod model;
 use auth::extract_user_id;
 use config::Config;
 use model::{
-    CleanupResponse, RunListResponse, SettingsRequest, StartRunRequest, TestModeState, TestRun,
+    CleanupResponse, RunListResponse, SettingsRequest, StartRunRequest, TestLabSummary,
+    TestModeState, TestRun,
 };
 
 #[derive(Clone)]
@@ -102,6 +103,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/actuator/health", get(health))
         .route("/api/v1/test-lab/state", get(get_state))
         .route("/api/v1/test-lab/settings", get(get_settings).patch(patch_settings))
+        .route("/api/v1/test-lab/summary", get(get_summary))
         .route("/api/v1/test-lab/runs", post(start_run).get(list_runs))
         .route("/api/v1/test-lab/runs/{id}", get(get_run).delete(delete_run))
         .route("/api/v1/test-lab/runs/{id}/stop", post(stop_run))
@@ -167,6 +169,54 @@ async fn get_settings(
 ) -> Result<Json<TestModeState>, AppError> {
     let _ = require_user(&headers, &state)?;
     Ok(Json(active_state(&state).await?))
+}
+
+async fn get_summary(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> Result<Json<TestLabSummary>, AppError> {
+    let _ = require_user(&headers, &state)?;
+
+    let scanned: Vec<TestRun> = state
+        .runs
+        .find(doc! {})
+        .limit(500)
+        .await?
+        .try_collect()
+        .await?;
+
+    let peak_vus = scanned.iter().map(|run| run.vus).max().unwrap_or(0);
+    let peak_rps = scanned
+        .iter()
+        .map(|run| run.rps)
+        .fold(0.0_f64, f64::max);
+
+    let mut cursor = state
+        .runs
+        .find(doc! { "status": "COMPLETED" })
+        .sort(doc! { "startedAt": -1 })
+        .limit(1)
+        .await?;
+    let latest = cursor.try_next().await?;
+
+    let (last_success_rate, last_duration_sec, last_scenario, last_started_at) = match latest {
+        Some(run) => (
+            run.success_rate,
+            run.duration_sec,
+            Some(run.scenario),
+            Some(run.started_at),
+        ),
+        None => (0.0, 0, None, None),
+    };
+
+    Ok(Json(TestLabSummary {
+        peak_vus,
+        peak_rps,
+        last_success_rate,
+        last_duration_sec,
+        last_scenario,
+        last_started_at,
+    }))
 }
 
 async fn patch_settings(
