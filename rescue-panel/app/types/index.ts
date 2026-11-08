@@ -123,9 +123,11 @@ export interface TestRunEndpoint {
 }
 
 export interface TestRunPoint {
-  t: number
-  rps: number
-  p95: number
+  t?: number
+  rps?: number
+  p95?: number
+  vus?: number
+  success?: number
 }
 
 export interface TestRun {
@@ -150,7 +152,7 @@ export interface TestRun {
   p95: number
   p99: number
   endpoints: TestRunEndpoint[]
-  series: TestRunPoint[]
+  series?: TestRunPoint[]
   testMode: boolean
   operatorId: string | null
 }

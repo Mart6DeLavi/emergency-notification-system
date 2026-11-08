@@ -5,11 +5,13 @@ use axum::routing::{delete, get, patch, post};
 use axum::{Json, Router};
 use chrono::{Duration, Utc};
 use futures_util::TryStreamExt;
-use mongodb::bson::doc;
+use mongodb::bson::{doc, Bson};
 use mongodb::{Client, Collection};
 use serde::Deserialize;
 use serde_json::{json, Value};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 use std::process::Stdio;
 use std::sync::Arc;
 
@@ -301,11 +303,14 @@ async fn run_k6(
     duration_sec: u64,
 ) {
     let summary_path = format!("/tmp/k6-{}.json", run_id);
+    let points_path = format!("/tmp/k6-{}.jsonl", run_id);
     let duration = format!("{}s", duration_sec);
 
     let child = tokio::process::Command::new(&state.config.k6_bin)
         .arg("run")
         .arg("--quiet")
+        .arg("--out")
+        .arg(format!("json={}", points_path))
         .arg("--summary-export")
         .arg(&summary_path)
         .arg(&state.config.k6_script)
@@ -346,9 +351,10 @@ async fn run_k6(
         .unwrap_or_default();
 
     if status {
+        let series = parse_series(&points_path);
         match std::fs::read_to_string(&summary_path) {
             Ok(contents) => match serde_json::from_str::<Value>(&contents) {
-                Ok(summary) => mark_completed(&state, &run_id, &summary).await,
+                Ok(summary) => mark_completed(&state, &run_id, &summary, &series).await,
                 Err(e) => mark_failed(&state, &run_id, &format!("Invalid k6 summary: {}", e)).await,
             },
             Err(e) => mark_failed(&state, &run_id, &format!("Missing k6 summary: {}", e)).await,
@@ -358,7 +364,95 @@ async fn run_k6(
     }
 
     let _ = std::fs::remove_file(&summary_path);
+    let _ = std::fs::remove_file(&points_path);
     disable_if_run(&state, &run_id).await;
+}
+
+#[derive(Default)]
+struct SeriesBucket {
+    requests: i64,
+    failures: i64,
+    vus: f64,
+    durations: Vec<f64>,
+}
+
+fn parse_series(path: &str) -> Vec<model::SeriesPoint> {
+    let file = match File::open(path) {
+        Ok(file) => file,
+        Err(_) => return Vec::new(),
+    };
+
+    let mut buckets: BTreeMap<i64, SeriesBucket> = BTreeMap::new();
+    let mut base: Option<chrono::DateTime<Utc>> = None;
+
+    for line in BufReader::new(file).lines().map_while(Result::ok) {
+        let Ok(point) = serde_json::from_str::<Value>(&line) else {
+            continue;
+        };
+        if point.get("type").and_then(Value::as_str) != Some("Point") {
+            continue;
+        }
+        let Some(metric) = point.get("metric").and_then(Value::as_str) else {
+            continue;
+        };
+        let Some(data) = point.get("data") else {
+            continue;
+        };
+        let Some(value) = data.get("value").and_then(Value::as_f64) else {
+            continue;
+        };
+        let Some(time) = data
+            .get("time")
+            .and_then(Value::as_str)
+            .and_then(|value| chrono::DateTime::parse_from_rfc3339(value).ok())
+            .map(|value| value.with_timezone(&Utc))
+        else {
+            continue;
+        };
+
+        let base_time = *base.get_or_insert(time);
+        let offset = (time - base_time).num_seconds().max(0);
+        let bucket = buckets.entry(offset).or_default();
+
+        match metric {
+            "http_reqs" => bucket.requests += 1,
+            "http_req_failed" => {
+                if value >= 1.0 {
+                    bucket.failures += 1;
+                }
+            }
+            "http_req_duration" => bucket.durations.push(value),
+            "vus" => bucket.vus = value,
+            _ => {}
+        }
+    }
+
+    buckets
+        .into_iter()
+        .map(|(t, mut bucket)| {
+            bucket.durations.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+            let count = bucket.durations.len();
+            let p95 = if count == 0 {
+                0.0
+            } else {
+                let index = ((count as f64 * 0.95).ceil() as usize).saturating_sub(1);
+                bucket.durations[index.min(count - 1)]
+            };
+            let success = if bucket.requests == 0 {
+                100.0
+            } else {
+                (bucket.requests - bucket.failures).max(0) as f64 / bucket.requests as f64 * 100.0
+            };
+
+            model::SeriesPoint {
+                t,
+                rps: bucket.requests as f64,
+                p95,
+                vus: bucket.vus,
+                success,
+            }
+        })
+        .collect()
 }
 
 fn f64_at(value: &Value, keys: &[&str]) -> f64 {
@@ -379,7 +473,12 @@ fn metric_f64(summary: &Value, metric: &str, key: &str) -> f64 {
     f64_at(summary, &["metrics", metric, "values", key])
 }
 
-async fn mark_completed(state: &AppState, run_id: &str, summary: &Value) {
+async fn mark_completed(
+    state: &AppState,
+    run_id: &str,
+    summary: &Value,
+    series: &[model::SeriesPoint],
+) {
     let count = metric_f64(summary, "http_reqs", "count");
     let rate = metric_f64(summary, "http_reqs", "rate");
     let failed = metric_f64(summary, "http_req_failed", "value");
@@ -391,6 +490,7 @@ async fn mark_completed(state: &AppState, run_id: &str, summary: &Value) {
     };
     let total = count.round() as i64;
     let failures = (count * failed).round() as i64;
+    let series_bson = mongodb::bson::to_bson(&series).unwrap_or_else(|_| Bson::Array(vec![]));
 
     let update = doc! {
         "$set": {
@@ -406,6 +506,7 @@ async fn mark_completed(state: &AppState, run_id: &str, summary: &Value) {
             "p50": p50,
             "p95": p95,
             "p99": p99,
+            "series": series_bson,
             "pid": null,
         }
     };
